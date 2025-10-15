@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% block title %}Product Form{% endblock %}
+
+{% block content %}
+<h1>{% if object %}Edit{% else %}Add{% endif %} Product</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <h4>Product Images</h4>
+    {{ images.management_form }}
+    {% for form in images %}
+        <div class="mb-2">
+            {{ form.image.label_tag }} {{ form.image }}
+            {{ form.alt_text.label_tag }} {{ form.alt_text }}
+            {{ form.order.label_tag }} {{ form.order }}
+            {% if form.instance.pk %}
+                <label>Delete:</label> {{ form.DELETE }}
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}
