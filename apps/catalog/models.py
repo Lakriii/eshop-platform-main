@@ -43,7 +43,7 @@ class ProductVariant(models.Model):
     sku = models.CharField(max_length=64, unique=True)
     attributes = models.JSONField(default=dict, blank=True)  # e.g. {"size": "L", "color": "red"}
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # optional override
-
+    stock_quantity = models.PositiveIntegerField(default=0)  # number of items available in stock
     def get_price(self):
         return self.price if self.price is not None else self.product.price
 

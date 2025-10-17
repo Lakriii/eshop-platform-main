@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Checkout</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <h3>Items in Cart:</h3>
+        <ul>
+            {% for item in cart.items.all %}
+            <li>{{ item.variant.product.name }} x {{ item.quantity }} = {{ item.line_total }} €</li>
+            {% endfor %}
+        </ul>
+
+        <p><strong>Total: {{ total }} €</strong></p>
+
+        <button type="submit" class="btn btn-success btn-lg">Place Order / Pay</button>
+    </form>
+</div>
+{% endblock %}

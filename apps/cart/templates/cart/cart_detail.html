@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% block title %}Your Cart{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Your Cart</h1>
+
+    {% if cart.items.exists %}
+        <table class="table table-bordered align-middle mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart.items.all %}
+                <tr>
+                    <td>{{ item.variant.product.name }}</td>
+                    <td>
+                        <form method="post" action="{% url 'cart_item_update' item.id %}" class="d-flex">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="form-control me-2" style="width: 80px;">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                        </form>
+                    </td>
+                    <td>{{ item.price }} €</td>
+                    <td>{{ item.line_total }} €</td>
+                    <td>
+                        <form method="post" action="{% url 'cart_item_remove' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="text-end mt-3">
+            <h4>Total: <strong>{{ total }} €</strong></h4>
+        </div>
+
+        <!-- Tlačidlo Pokračovať k platbe -->
+        <div class="mt-4 text-end">
+            <form method="post" action="{% url 'cart_checkout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg">Pokračovať k platbe</button>
+            </form>
+        </div>
+
+    {% else %}
+        <p>Your cart is empty.</p>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'catalog' %}" class="btn btn-outline-secondary">← Continue Shopping</a>
+    </div>
+</div>
+{% endblock %}

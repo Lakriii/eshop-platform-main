@@ -121,3 +121,8 @@ CELERY_RESULT_BACKEND = REDIS_URL
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# Session vyprší po zatvorení prehliadača
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Voliteľne môžeš nastaviť timeout aj explicitne, napr. 1 hodina
+# SESSION_COOKIE_AGE = 3600  # sekundy
