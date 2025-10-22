@@ -49,3 +49,11 @@ class PaymentRecord(models.Model):
 
     def __str__(self):
         return f"Payment {self.pk} for Order {self.order.pk} - {self.status}"
+# apps/orders/models.py
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_percentage = models.PositiveIntegerField(default=0)  # zľava v %
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.discount_percentage}%"

@@ -1,4 +1,3 @@
-# apps/orders/forms.py
 from django import forms
 from django.core.validators import RegexValidator, EmailValidator
 from crispy_forms.helper import FormHelper
@@ -13,6 +12,7 @@ postcode_validator = RegexValidator(
     regex=r'^\d{3,10}$',
     message="PSČ musí obsahovať 3-10 číslic."
 )
+
 
 class CheckoutForm(forms.Form):
     # --- Osobné údaje ---
@@ -32,6 +32,14 @@ class CheckoutForm(forms.Form):
     shipping_postcode = forms.CharField(label="PSČ", max_length=10, validators=[postcode_validator])
     shipping_country = forms.CharField(label="Štát", max_length=100)
 
+    # --- Kupón ---
+    coupon_code = forms.CharField(
+        label="Kupón (ak máte)",
+        max_length=50,
+        required=False,
+        help_text="Zadajte kód kupónu pre zľavu."
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,7 +54,6 @@ class CheckoutForm(forms.Form):
                 ),
                 Row(Column("phone", css_class="col-md-6")),
             ),
-
             Fieldset(
                 "🧾 Fakturačná adresa",
                 Row(
@@ -58,7 +65,6 @@ class CheckoutForm(forms.Form):
                     Column("billing_country", css_class="col-md-3"),
                 ),
             ),
-
             Fieldset(
                 "📦 Doručovacia adresa",
                 Row(
@@ -70,25 +76,9 @@ class CheckoutForm(forms.Form):
                     Column("shipping_country", css_class="col-md-3"),
                 ),
             ),
-
-            Submit("submit", "Pokračovať k platbe", css_class="btn btn-success btn-lg mt-3 w-100")
+            Fieldset(
+                "🎟️ Kupón",
+                Row(Column("coupon_code", css_class="col-md-6")),
+            ),
+            Submit("submit", "Pokračovať k platbe", css_class="btn btn-success btn-lg mt-3 w-100"),
         )
-
-    # --- Voliteľné vlastné validácie ---
-    def clean_shipping_postcode(self):
-        data = self.cleaned_data["shipping_postcode"]
-        if not data.isdigit():
-            raise forms.ValidationError("PSČ musí obsahovať iba čísla.")
-        return data
-
-    def clean_billing_postcode(self):
-        data = self.cleaned_data["billing_postcode"]
-        if not data.isdigit():
-            raise forms.ValidationError("PSČ musí obsahovať iba čísla.")
-        return data
-
-    def clean_phone(self):
-        data = self.cleaned_data["phone"]
-        if not all(c.isdigit() or c == '+' for c in data):
-            raise forms.ValidationError("Telefónne číslo môže obsahovať len čísla a +.")
-        return data
