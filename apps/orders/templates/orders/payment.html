@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block title %}Platba objednávky{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1>💳 Platba objednávky č. {{ order.id }}</h1>
+    <p>Celková suma: <strong>{{ order.total }} €</strong></p>
+    <p>Vyplňte simulovanú platbu nižšie.</p>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-lg">Zaplatiť teraz</button>
+        <a href="{% url 'order_detail' order.pk %}" class="btn btn-secondary btn-lg ms-2">Zrušiť</a>
+    </form>
+</div>
+{% endblock %}

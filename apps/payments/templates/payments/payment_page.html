@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+{% block title %}Payment{% endblock %}
+
+{% block content %}
+<h1>Payment for Order #{{ order.pk }}</h1>
+<p>Total: {{ order.total }} €</p>
+<p>Simulated payment button:</p>
+<form method="post" action="{% url 'payment_success' order.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">Pay Now</button>
+</form>
+{% endblock %}

@@ -1,4 +1,3 @@
-# apps/cart/views.py
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.contrib import messages
@@ -49,9 +48,9 @@ class AddToCartView(View):
         if not variant:
             messages.error(request, "Produkt nie je k dispozícii.")
             return redirect("catalog")
-        
+
         cart = get_or_create_cart(request)
-        
+
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             variant=variant,
@@ -74,9 +73,12 @@ class CartItemUpdateView(View):
             item.delete()
             messages.info(request, "🗑️ Položka bola odstránená z košíka.")
         else:
-            if new_qty > item.variant.stock_quantity:
-                messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {item.variant.stock_quantity}")
+            # kontrola skladu
+            stock_qty = getattr(item.variant, "stock", getattr(item.variant, "stock_quantity", 0))
+            if new_qty > stock_qty:
+                messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
                 return redirect("cart_detail")
+
             item.quantity = new_qty
             item.save()
             messages.success(request, "🔄 Počet kusov bol aktualizovaný.")
@@ -91,7 +93,6 @@ class CartItemRemoveView(View):
         item.delete()
         messages.info(request, "🗑️ Položka bola odstránená z košíka.")
         return redirect("cart_detail")
-
 
 class CheckoutView(View):
     """Umožní dokončiť objednávku pre prihlásených aj anonymných používateľov."""
@@ -114,12 +115,13 @@ class CheckoutView(View):
 
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            # Skontrolujeme sklad
+            # Kontrola skladu cez Stock model
             for item in cart.items.all():
-                if item.quantity > item.variant.stock_quantity:
+                stock_qty = item.variant.stock.quantity if hasattr(item.variant, "stock") else item.variant.stock_quantity
+                if item.quantity > stock_qty:
                     messages.error(
                         request,
-                        f"Nedostatok skladom: {item.variant.product.name}. Max: {item.variant.stock_quantity}"
+                        f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}"
                     )
                     return redirect("cart_detail")
 
@@ -131,11 +133,19 @@ class CheckoutView(View):
                 billing_name=form.cleaned_data['full_name'],
                 billing_email=form.cleaned_data['email'],
                 billing_phone=form.cleaned_data['phone'],
-                billing_address=form.cleaned_data['billing_address'],
-                shipping_address=form.cleaned_data['shipping_address'],
+
+                billing_address=f"{form.cleaned_data['billing_street']}, "
+                                f"{form.cleaned_data['billing_city']} "
+                                f"{form.cleaned_data['billing_postcode']} "
+                                f"{form.cleaned_data['billing_country']}",
+
+                shipping_address=f"{form.cleaned_data['shipping_street']}, "
+                                 f"{form.cleaned_data['shipping_city']} "
+                                 f"{form.cleaned_data['shipping_postcode']} "
+                                 f"{form.cleaned_data['shipping_country']}",
             )
 
-            # Uložíme položky a zníženie skladu
+            # Uloženie položiek a zníženie skladu
             for item in cart.items.all():
                 OrderItem.objects.create(
                     order=order,
@@ -144,13 +154,21 @@ class CheckoutView(View):
                     price=item.price,
                     quantity=item.quantity
                 )
-                item.variant.stock_quantity -= item.quantity
-                item.variant.save()
+
+                # Odpočítanie skladu
+                if hasattr(item.variant, "stock"):
+                    item.variant.stock.quantity -= item.quantity
+                    item.variant.stock.save()
+                else:
+                    item.variant.stock_quantity = max(item.variant.stock_quantity - item.quantity, 0)
+                    item.variant.save()
 
             cart.items.all().delete()
 
-            messages.success(request, "Objednávka vytvorená! Pokračujte k platbe.")
-            return redirect("order_detail", pk=order.pk)
+            messages.success(request, "✅ Objednávka bola vytvorená! Pokračujte k platbe.")
+            # Presmerovanie na simulovanú platbu
+            return redirect("payment_page", order_id=order.pk)
+
         else:
             total = sum(item.line_total() for item in cart.items.all())
             return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})

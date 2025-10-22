@@ -1,17 +1,24 @@
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-from django.conf import settings
-import stripe
+# apps/payments/views.py
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views import View
+from django.contrib import messages
+from apps.orders.models import Order
+
+class PaymentProcessView(View):
+    def get(self, request, order_id):
+        order = get_object_or_404(Order, pk=order_id)
+        return render(request, "payments/payment_process.html", {"order": order})
+
+    def post(self, request, order_id):
+        order = get_object_or_404(Order, pk=order_id)
+        order.status = "paid"
+        order.save()
+        messages.success(request, "✅ Platba bola úspešná. Ďakujeme za vašu objednávku!")
+        return redirect("payment_success", order_id=order.pk)
 
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+class PaymentSuccessView(View):
+    def get(self, request, order_id):
+        order = get_object_or_404(Order, pk=order_id)
+        return render(request, "payments/payment_success.html", {"order": order})
 
-
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
-    except (ValueError, stripe.error.SignatureVerificationError):
-        return HttpResponse(status=400)

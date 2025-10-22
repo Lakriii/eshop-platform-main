@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% block title %}Ďakujeme za objednávku{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1>🎉 Ďakujeme za Vašu objednávku!</h1>
+    <p>Objednávka č. <strong>{{ order.id }}</strong> bola úspešne zaplatená.</p>
+    <p>Na Váš e-mail (<strong>{{ order.billing_email }}</strong>) sme zaslali potvrdenie.</p>
+
+    <div class="mt-4">
+        <a href="{% url 'order_detail' order.pk %}" class="btn btn-outline-primary">Zobraziť objednávku</a>
+        <a href="{% url 'catalog' %}" class="btn btn-primary ms-2">Pokračovať v nákupe</a>
+    </div>
+</div>
+{% endblock %}

@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.payments",
     "apps.api",
+    "crispy_forms",
+    "crispy_bootstrap5",
 ]
 
 # MIDDLEWARE
@@ -126,3 +128,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Voliteľne môžeš nastaviť timeout aj explicitne, napr. 1 hodina
 # SESSION_COOKIE_AGE = 3600  # sekundy
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"

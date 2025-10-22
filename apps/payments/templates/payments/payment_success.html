@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Ďakujeme{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1>✅ Platba bola úspešná!</h1>
+    <p>Ďakujeme za vašu objednávku #{{ order.pk }}.</p>
+    <p>Celková suma: <strong>{{ order.total }} €</strong></p>
+
+    <h3>Položky objednávky:</h3>
+    <ul class="list-unstyled">
+        {% for item in order.items.all %}
+            <li>{{ item.product_name }} x {{ item.quantity }} = {{ item.line_total }} €</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'catalog' %}" class="btn btn-primary mt-4">Pokračovať v nákupoch</a>
+    <a href="{% url 'order_detail' order.pk %}" class="btn btn-secondary mt-4">Zobraziť objednávku</a>
+</div>
+{% endblock %}

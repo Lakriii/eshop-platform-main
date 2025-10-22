@@ -28,8 +28,9 @@ urlpatterns = [
     path('catalog/', include('apps.catalog.urls')),
     path("cart/", include("apps.cart.urls")),
     path('orders/', include('apps.orders.urls')),
+    path('', include('apps.payments.urls')),
+]
 
 
-    ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

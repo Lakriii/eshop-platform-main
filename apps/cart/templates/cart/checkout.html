@@ -1,24 +1,27 @@
 {% extends "core/base.html" %}
-{% block title %}Checkout{% endblock %}
+{% load crispy_forms_tags %}
+{% block title %}Pokladňa{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1>Checkout</h1>
+    <h1>Pokladňa</h1>
 
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {{ form|crispy }}
 
-        <h3>Items in Cart:</h3>
+        <h3 class="mt-4">Položky v košíku:</h3>
         <ul>
             {% for item in cart.items.all %}
-            <li>{{ item.variant.product.name }} x {{ item.quantity }} = {{ item.line_total }} €</li>
+            <li>{{ item.variant.product.name }} × {{ item.quantity }} = {{ item.line_total }} €</li>
             {% endfor %}
         </ul>
 
-        <p><strong>Total: {{ total }} €</strong></p>
+        <p><strong>Spolu: {{ total }} €</strong></p>
 
-        <button type="submit" class="btn btn-success btn-lg">Place Order / Pay</button>
+        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
+            💳 Uložiť a prejsť k platbe
+        </button>
     </form>
 </div>
 {% endblock %}
