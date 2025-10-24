@@ -17,6 +17,6 @@
     </ul>
 
     <a href="{% url 'catalog' %}" class="btn btn-primary mt-4">Pokračovať v nákupoch</a>
-    <a href="{% url 'order_detail' order.pk %}" class="btn btn-secondary mt-4">Zobraziť objednávku</a>
+    <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-secondary mt-4">Zobraziť objednávku</a>
 </div>
 {% endblock %}

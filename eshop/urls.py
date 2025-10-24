@@ -26,11 +26,11 @@ urlpatterns = [
    # path('api/', include('apps.api.urls')),
     path('', include('apps.core.urls')),
     path('catalog/', include('apps.catalog.urls')),
-    path("cart/", include("apps.cart.urls")),
-    path('orders/', include('apps.orders.urls')),
+    path("cart/", include(("apps.cart.urls"), namespace="cart")),
+    path("orders/", include(("apps.orders.urls", "orders"), namespace="orders")),
     path("payments/", include("apps.payments.urls", namespace="payments")),
 ]
 
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 

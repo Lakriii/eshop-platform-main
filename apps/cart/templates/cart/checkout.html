@@ -1,10 +1,22 @@
 {% extends "core/base.html" %}
 {% load crispy_forms_tags %}
+
 {% block title %}Pokladňa{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <h1>Pokladňa</h1>
+
+    <!-- Zobrazenie Django messages -->
+    {% if messages %}
+      <div class="mt-3">
+        {% for message in messages %}
+          <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}
@@ -13,9 +25,13 @@
         <h3 class="mt-4">Položky v košíku:</h3>
         <ul>
             {% for item in cart.items.all %}
-            <li>{{ item.variant.product.name }} × {{ item.quantity }} = {{ item.line_total }} €</li>
+                <li>{{ item.variant.product.name }} × {{ item.quantity }} = {{ item.line_total }} €</li>
             {% endfor %}
         </ul>
+
+        {% if discount %}
+            <p class="text-success">Zľava: -{{ discount }} €</p>
+        {% endif %}
 
         <p><strong>Spolu: {{ total }} €</strong></p>
 

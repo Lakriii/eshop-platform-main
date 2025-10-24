@@ -13,41 +13,37 @@ postcode_validator = RegexValidator(
     message="PSČ musí obsahovať 3-10 číslic."
 )
 
-
 class CheckoutForm(forms.Form):
-    # --- Osobné údaje ---
+    # Osobné údaje
     full_name = forms.CharField(label="Meno a priezvisko", max_length=100)
     email = forms.EmailField(label="E-mail", validators=[EmailValidator(message="Neplatný e-mail.")])
     phone = forms.CharField(label="Telefónne číslo", max_length=20, validators=[phone_validator])
 
-    # --- Fakturačná adresa ---
+    # Fakturačná adresa
     billing_street = forms.CharField(label="Ulica a číslo", max_length=150)
     billing_city = forms.CharField(label="Mesto", max_length=100)
     billing_postcode = forms.CharField(label="PSČ", max_length=10, validators=[postcode_validator])
     billing_country = forms.CharField(label="Štát", max_length=100)
 
-    # --- Doručovacia adresa ---
+    # Doručovacia adresa
     shipping_street = forms.CharField(label="Ulica a číslo", max_length=150)
     shipping_city = forms.CharField(label="Mesto", max_length=100)
     shipping_postcode = forms.CharField(label="PSČ", max_length=10, validators=[postcode_validator])
     shipping_country = forms.CharField(label="Štát", max_length=100)
 
-    # --- Kupón ---
+    # Kupón (voliteľný)
     coupon_code = forms.CharField(
-        label="Kupón (ak máte)",
-        max_length=50,
-        required=False,
-        help_text="Zadajte kód kupónu pre zľavu."
+        label="Kupón (ak máte)", max_length=50, required=False,
+        help_text="Zadajte kód kupónu pre zľavu (voliteľné)."
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.layout = Layout(
             Fieldset(
-                "🧍‍♂️ Osobné údaje",
+                "🧍‍ Osobné údaje",
                 Row(
                     Column("full_name", css_class="col-md-6"),
                     Column("email", css_class="col-md-6"),
@@ -80,5 +76,24 @@ class CheckoutForm(forms.Form):
                 "🎟️ Kupón",
                 Row(Column("coupon_code", css_class="col-md-6")),
             ),
-            Submit("submit", "Pokračovať k platbe", css_class="btn btn-success btn-lg mt-3 w-100"),
+            Submit("submit", "Uložiť a prejsť k platbe", css_class="btn btn-success btn-lg mt-3 w-100")
         )
+
+    # dodatočné validácie
+    def clean_shipping_postcode(self):
+        data = self.cleaned_data["shipping_postcode"]
+        if not data.isdigit():
+            raise forms.ValidationError("PSČ musí obsahovať iba čísla.")
+        return data
+
+    def clean_billing_postcode(self):
+        data = self.cleaned_data["billing_postcode"]
+        if not data.isdigit():
+            raise forms.ValidationError("PSČ musí obsahovať iba čísla.")
+        return data
+
+    def clean_phone(self):
+        data = self.cleaned_data["phone"]
+        if not all(c.isdigit() or c == '+' for c in data):
+            raise forms.ValidationError("Telefónne číslo môže obsahovať len čísla a +.")
+        return data

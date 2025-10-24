@@ -21,7 +21,7 @@
                 <tr>
                     <td>{{ item.variant.product.name }}</td>
                     <td>
-                        <form method="post" action="{% url 'cart_item_update' item.id %}" class="d-flex">
+                        <form method="post" action="{% url 'cart:cart_item_update' item.id %}" class="d-flex">
                             {% csrf_token %}
                             <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="form-control me-2" style="width: 80px;">
                             <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
@@ -30,7 +30,7 @@
                     <td>{{ item.price }} €</td>
                     <td>{{ item.line_total }} €</td>
                     <td>
-                        <form method="post" action="{% url 'cart_item_remove' item.id %}">
+                        <form method="post" action="{% url 'cart:cart_item_remove' item.id %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-danger">Remove</button>
                         </form>
@@ -46,7 +46,7 @@
 
         <!-- Tlačidlo Pokračovať k platbe -->
         <div class="mt-4 text-end">
-            <form method="post" action="{% url 'cart_checkout' %}">
+            <form method="post" action="{% url 'cart:cart_checkout' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success btn-lg">Pokračovať k platbe</button>
             </form>

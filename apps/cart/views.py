@@ -1,14 +1,16 @@
+from decimal import Decimal
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.contrib import messages
 from .models import Cart, CartItem
 from apps.catalog.models import ProductVariant
-from apps.orders.models import Order, OrderItem
-from apps.orders.forms import CheckoutForm
 from apps.orders.models import Order, OrderItem, Coupon
+from apps.orders.forms import CheckoutForm
+from django.db import transaction
 
 
 def get_or_create_cart(request):
+    """Získa alebo vytvorí košík pre session alebo prihláseného užívateľa."""
     session_key = request.session.session_key
     if not session_key:
         request.session.create()
@@ -37,6 +39,7 @@ def get_or_create_cart(request):
 
 
 class CartDetailView(View):
+    """Zobrazenie košíka."""
     def get(self, request):
         cart = get_or_create_cart(request)
         total = sum(item.line_total() for item in cart.items.all())
@@ -44,11 +47,12 @@ class CartDetailView(View):
 
 
 class AddToCartView(View):
+    """Pridanie produktu do košíka."""
     def post(self, request, product_id):
         variant = ProductVariant.objects.filter(product_id=product_id).first()
         if not variant:
             messages.error(request, "Produkt nie je k dispozícii.")
-            return redirect("catalog")
+            return redirect("catalog:product_list")
 
         cart = get_or_create_cart(request)
 
@@ -60,134 +64,137 @@ class AddToCartView(View):
         if not created:
             item.quantity += 1
             item.save()
+
         messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
-        return redirect("cart_detail")
+        return redirect("cart:cart_detail")
 
 
 class CartItemUpdateView(View):
+    """Aktualizácia počtu kusov v košíku."""
     def post(self, request, item_id):
         cart = get_or_create_cart(request)
         item = get_object_or_404(CartItem, pk=item_id, cart=cart)
-        new_qty = int(request.POST.get("quantity", 1))
+
+        try:
+            new_qty = int(request.POST.get("quantity", 1))
+        except (TypeError, ValueError):
+            new_qty = item.quantity
 
         if new_qty <= 0:
             item.delete()
             messages.info(request, "🗑️ Položka bola odstránená z košíka.")
         else:
-            # kontrola skladu
-            stock_qty = getattr(item.variant, "stock", getattr(item.variant, "stock_quantity", 0))
+            # získanie dostupného skladu
+            stock_qty = getattr(getattr(item.variant, "stock", None), "available", getattr(item.variant, "stock_quantity", 0))
             if new_qty > stock_qty:
                 messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
-                return redirect("cart_detail")
+                return redirect("cart:cart_detail")
 
             item.quantity = new_qty
             item.save()
             messages.success(request, "🔄 Počet kusov bol aktualizovaný.")
 
-        return redirect("cart_detail")
+        return redirect("cart:cart_detail")
 
 
 class CartItemRemoveView(View):
+    """Odstránenie položky z košíka."""
     def post(self, request, item_id):
         cart = get_or_create_cart(request)
         item = get_object_or_404(CartItem, pk=item_id, cart=cart)
         item.delete()
         messages.info(request, "🗑️ Položka bola odstránená z košíka.")
-        return redirect("cart_detail")
+        return redirect("cart:cart_detail")
+
 
 class CheckoutView(View):
-    """Dokončenie objednávky + kupóny + vernostné body."""
+    """Dokončenie objednávky + kupóny + vernostné body. Decimal-safe."""
 
     def get(self, request):
         cart = get_or_create_cart(request)
         if not cart.items.exists():
             messages.warning(request, "Váš košík je prázdny.")
-            return redirect("cart_detail")
+            return redirect("cart:cart_detail")
 
         form = CheckoutForm()
         total = sum(item.line_total() for item in cart.items.all())
         return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
 
+    @transaction.atomic
     def post(self, request):
         cart = get_or_create_cart(request)
         if not cart.items.exists():
             messages.warning(request, "Váš košík je prázdny.")
-            return redirect("cart_detail")
+            return redirect("cart:cart_detail")
 
         form = CheckoutForm(request.POST)
-        if form.is_valid():
-            total = sum(item.line_total() for item in cart.items.all())
-
-            # --- Aplikovanie kupónu ---
-            coupon_code = form.cleaned_data.get("coupon_code")
-            discount = 0
-            if coupon_code:
-                try:
-                    coupon = Coupon.objects.get(code=coupon_code, active=True)
-                    discount = total * coupon.discount_percentage / 100
-                    total -= discount
-                    messages.success(request, f"Zľava {coupon.discount_percentage}% bola aplikovaná! (-{discount:.2f}€)")
-                except Coupon.DoesNotExist:
-                    messages.error(request, "Neplatný alebo neaktívny kupón.")
-
-            # --- Kontrola skladu ---
-            for item in cart.items.all():
-                stock_qty = item.variant.stock.quantity if hasattr(item.variant, "stock") else item.variant.stock_quantity
-                if item.quantity > stock_qty:
-                    messages.error(
-                        request,
-                        f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}"
-                    )
-                    return redirect("cart_detail")
-
-            # --- Vytvorenie objednávky ---
-            order = Order.objects.create(
-                user=request.user if request.user.is_authenticated else None,
-                status='pending_payment',
-                total=total,
-                billing_name=form.cleaned_data['full_name'],
-                billing_email=form.cleaned_data['email'],
-                billing_phone=form.cleaned_data['phone'],
-                billing_address=f"{form.cleaned_data['billing_street']}, "
-                                f"{form.cleaned_data['billing_city']} "
-                                f"{form.cleaned_data['billing_postcode']} "
-                                f"{form.cleaned_data['billing_country']}",
-                shipping_address=f"{form.cleaned_data['shipping_street']}, "
-                                 f"{form.cleaned_data['shipping_city']} "
-                                 f"{form.cleaned_data['shipping_postcode']} "
-                                 f"{form.cleaned_data['shipping_country']}",
-            )
-
-            # --- Uloženie položiek + odpočet skladu ---
-            for item in cart.items.all():
-                OrderItem.objects.create(
-                    order=order,
-                    product_name=item.variant.product.name,
-                    sku=item.variant.sku,
-                    price=item.price,
-                    quantity=item.quantity
-                )
-
-                if hasattr(item.variant, "stock"):
-                    item.variant.stock.quantity -= item.quantity
-                    item.variant.stock.save()
-                else:
-                    item.variant.stock_quantity = max(item.variant.stock_quantity - item.quantity, 0)
-                    item.variant.save()
-
-            # --- Vernostné body ---
-            if request.user.is_authenticated:
-                profile = request.user.profile  # musíš mať model Profile
-                earned_points = int(total // 10)
-                profile.loyalty_points += earned_points
-                profile.save()
-                messages.info(request, f"Získali ste {earned_points} vernostných bodov!")
-
-            cart.items.all().delete()
-            messages.success(request, "✅ Objednávka bola vytvorená! Pokračujte k platbe.")
-
-            # 🔧 FIX: použijeme namespace 'payments'
-            return redirect("payments:payment_process", order_id=order.pk)
-
         total = sum(item.line_total() for item in cart.items.all())
-        return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
+
+        if not form.is_valid():
+            messages.error(request, "Prosím vyplňte všetky povinné polia.")
+            return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
+
+        # kupón
+        coupon_code = form.cleaned_data.get("coupon_code", "").strip()
+        discount = Decimal("0.00")
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(code__iexact=coupon_code, active=True)
+                pct = Decimal(coupon.discount_percentage) / Decimal("100")
+                discount = (total * pct).quantize(Decimal("0.01"))
+                total = (total - discount).quantize(Decimal("0.01"))
+                messages.success(request, f"Zľava {coupon.discount_percentage}% aplikovaná (-{discount} €). Kód využitý.")
+                coupon.active = False
+                coupon.save()
+            except Coupon.DoesNotExist:
+                messages.error(request, "Neplatný alebo neaktívny kupón.")
+                return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
+
+        # kontrola skladu pred objednávkou
+        for item in cart.items.select_related("variant__stock"):
+            stock_qty = getattr(getattr(item.variant, "stock", None), "available", getattr(item.variant, "stock_quantity", 0))
+            if item.quantity > stock_qty:
+                messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
+                return redirect("cart:cart_detail")
+
+        # vytvorenie objednávky
+        order = Order.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            status='pending_payment',
+            total=total,
+            billing_name=form.cleaned_data['full_name'],
+            billing_email=form.cleaned_data['email'],
+            billing_phone=form.cleaned_data['phone'],
+            billing_address=f"{form.cleaned_data['billing_street']}, {form.cleaned_data['billing_city']} {form.cleaned_data['billing_postcode']} {form.cleaned_data['billing_country']}",
+            shipping_address=f"{form.cleaned_data['shipping_street']}, {form.cleaned_data['shipping_city']} {form.cleaned_data['shipping_postcode']} {form.cleaned_data['shipping_country']}",
+        )
+
+        # uloženie položiek a odpočet skladu
+        for item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product_name=item.variant.product.name,
+                sku=item.variant.sku,
+                price=item.price,
+                quantity=item.quantity
+            )
+            if hasattr(item.variant, "stock") and item.variant.stock:
+                item.variant.stock.quantity = max(item.variant.stock.quantity - item.quantity, 0)
+                item.variant.stock.save()
+            else:
+                item.variant.stock_quantity = max(getattr(item.variant, "stock_quantity", 0) - item.quantity, 0)
+                item.variant.save()
+
+        # vernostné body
+        if request.user.is_authenticated and hasattr(request.user, "profile"):
+            earned_points = int(total // Decimal("10"))
+            request.user.profile.loyalty_points += earned_points
+            request.user.profile.save()
+            messages.info(request, f"Získali ste {earned_points} vernostných bodov!")
+
+        # vyprázdniť košík
+        cart.items.all().delete()
+        request.session["last_order_created_for_cart"] = cart.pk
+
+        messages.success(request, "Objednávka vytvorená. Pokračujem na platbu.")
+        return redirect("payments:payment_process", order_id=order.pk)
