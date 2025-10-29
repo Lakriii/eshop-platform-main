@@ -10,34 +10,13 @@ from django.db import transaction
 
 
 def get_or_create_cart(request):
-    """Získa alebo vytvorí košík pre session alebo prihláseného užívateľa."""
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
-
-    if request.user.is_authenticated:
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        # Zlúčenie session košíka s používateľským
-        try:
-            session_cart = Cart.objects.get(session_key=session_key, user__isnull=True)
-            for item in session_cart.items.all():
-                existing_item, created = CartItem.objects.get_or_create(
-                    cart=cart,
-                    variant=item.variant,
-                    defaults={'quantity': item.quantity, 'price': item.price}
-                )
-                if not created:
-                    existing_item.quantity += item.quantity
-                    existing_item.save()
-            session_cart.delete()
-        except Cart.DoesNotExist:
-            pass
+    cart_id = request.session.get("cart_id")
+    if cart_id:
+        cart, created = Cart.objects.get_or_create(id=cart_id)
     else:
-        cart, _ = Cart.objects.get_or_create(session_key=session_key, user=None)
-
+        cart = Cart.objects.create()
+        request.session["cart_id"] = cart.id
     return cart
-
 
 class CartDetailView(View):
     """Zobrazenie košíka."""
@@ -48,39 +27,34 @@ class CartDetailView(View):
 
 
 class AddToCartView(View):
-    """Pridanie produktu do košíka."""
     def post(self, request, product_id):
-        variant = ProductVariant.objects.filter(product_id=product_id).first()
-        if not variant:
-            messages.error(request, "Produkt nie je k dispozícii.")
-            return redirect("catalog:product_list")
+        variant_id = request.POST.get("variant_id")
+        quantity = int(request.POST.get("quantity", 1))
 
-        # ✅ Kontrola, či je produkt skladom
-        stock_qty = getattr(getattr(variant, "stock", None), "quantity", getattr(variant, "stock_quantity", 0))
-        if stock_qty <= 0:
-            messages.error(request, f"❌ Produkt '{variant.product.name}' je vypredaný.")
-            return redirect("catalog:product_list")
+        variant = get_object_or_404(ProductVariant, id=variant_id)
+        available = variant.available_stock
+
+        if available <= 0:
+            messages.error(request, f"Variant {variant.sku} nie je momentálne dostupný.")
+            return redirect("catalog:product_detail", slug=variant.product.slug)
+
+        if quantity > available:
+            messages.error(request, f"Nedostatok tovaru. Max dostupné: {available}.")
+            return redirect("catalog:product_detail", slug=variant.product.slug)
 
         cart = get_or_create_cart(request)
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             variant=variant,
-            defaults={"quantity": 1, "price": variant.get_price()},
+            defaults={"quantity": quantity, "price": variant.get_price()},
         )
-
         if not created:
-            if item.quantity + 1 > stock_qty:
-                messages.warning(request, f"⚠️ Nedostatok na sklade. Max: {stock_qty} ks.")
-            else:
-                item.quantity += 1
-                item.save()
-                messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
-        else:
-            messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
+            item.quantity += quantity
+            item.save()
 
+        messages.success(request, f"{variant.product.name} ({variant.sku}) bol pridaný do košíka.")
         return redirect("cart:cart_detail")
-
 
 class CartItemUpdateView(View):
     """Aktualizácia počtu kusov v košíku."""

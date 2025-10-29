@@ -1,8 +1,9 @@
 from django.contrib import admin
 from .models import Category, Product, ProductImage, ProductVariant, Stock
 
+
 # -------------------
-# Kategorie
+# Category
 # -------------------
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -32,7 +33,7 @@ class ProductVariantInline(admin.TabularInline):
 
 
 # -------------------
-# Product admin
+# Product
 # -------------------
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -44,7 +45,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 # -------------------
-# Stock admin
+# Stock
 # -------------------
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):

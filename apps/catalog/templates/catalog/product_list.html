@@ -5,7 +5,7 @@
 <h1>Products</h1>
 
 {% if user.is_staff %}
-    <a href="{% url 'product_create' %}" class="btn btn-primary mb-3">Add Product</a>
+    <a href="{% url 'catalog:product_create' %}" class="btn btn-primary mb-3">Add Product</a>
 {% endif %}
 
 <table class="table">
@@ -22,12 +22,12 @@
     <tbody>
         {% for product in products %}
         <tr>
-            <td><a href="{% url 'product_detail' product.slug %}">{{ product.name }}</a></td>
+            <td><a href="{% url 'catalog:product_detail' product.slug %}">{{ product.name }}</a></td>
             <td>{{ product.price }} {{ product.currency }}</td>
             <td>{{ product.is_active }}</td>
             {% if user.is_staff %}
             <td>
-                <a href="{% url 'product_edit' product.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                <a href="{% url 'catalog:product_edit' product.pk %}" class="btn btn-sm btn-warning">Edit</a>
             </td>
             {% endif %}
         </tr>

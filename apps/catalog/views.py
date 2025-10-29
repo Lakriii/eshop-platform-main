@@ -17,14 +17,8 @@ class ProductListView(ListView):
     model = Product
     template_name = "catalog/product_list.html"
     context_object_name = "products"
+    queryset = Product.objects.filter(is_active=True)
 
-    def get_queryset(self):
-        return Product.objects.filter(is_active=True)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["categories"] = Category.objects.filter(is_active=True, parent__isnull=True)
-        return context
 
 class ProductDetailView(DetailView):
     model = Product
@@ -35,6 +29,12 @@ class ProductDetailView(DetailView):
 
     def get_queryset(self):
         return Product.objects.filter(is_active=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        product = self.get_object()
+        context['variants'] = product.variants.all()
+        return context
 class CategoryDetailView(ListView):
     model = Product
     template_name = "catalog/category_detail.html"
