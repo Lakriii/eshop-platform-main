@@ -18,6 +18,7 @@ def get_or_create_cart(request):
 
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
+        # Zlúčenie session košíka s používateľským
         try:
             session_cart = Cart.objects.get(session_key=session_key, user__isnull=True)
             for item in session_cart.items.all():
@@ -54,6 +55,12 @@ class AddToCartView(View):
             messages.error(request, "Produkt nie je k dispozícii.")
             return redirect("catalog:product_list")
 
+        # ✅ Kontrola, či je produkt skladom
+        stock_qty = getattr(getattr(variant, "stock", None), "quantity", getattr(variant, "stock_quantity", 0))
+        if stock_qty <= 0:
+            messages.error(request, f"❌ Produkt '{variant.product.name}' je vypredaný.")
+            return redirect("catalog:product_list")
+
         cart = get_or_create_cart(request)
 
         item, created = CartItem.objects.get_or_create(
@@ -61,11 +68,17 @@ class AddToCartView(View):
             variant=variant,
             defaults={"quantity": 1, "price": variant.get_price()},
         )
-        if not created:
-            item.quantity += 1
-            item.save()
 
-        messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
+        if not created:
+            if item.quantity + 1 > stock_qty:
+                messages.warning(request, f"⚠️ Nedostatok na sklade. Max: {stock_qty} ks.")
+            else:
+                item.quantity += 1
+                item.save()
+                messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
+        else:
+            messages.success(request, f"{variant.product.name} bol pridaný do košíka.")
+
         return redirect("cart:cart_detail")
 
 
@@ -84,8 +97,7 @@ class CartItemUpdateView(View):
             item.delete()
             messages.info(request, "🗑️ Položka bola odstránená z košíka.")
         else:
-            # získanie dostupného skladu
-            stock_qty = getattr(getattr(item.variant, "stock", None), "available", getattr(item.variant, "stock_quantity", 0))
+            stock_qty = getattr(getattr(item.variant, "stock", None), "quantity", getattr(item.variant, "stock_quantity", 0))
             if new_qty > stock_qty:
                 messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
                 return redirect("cart:cart_detail")
@@ -108,8 +120,7 @@ class CartItemRemoveView(View):
 
 
 class CheckoutView(View):
-    """Dokončenie objednávky + kupóny + vernostné body. Decimal-safe."""
-
+    """Dokončenie objednávky + kupóny + vernostné body."""
     def get(self, request):
         cart = get_or_create_cart(request)
         if not cart.items.exists():
@@ -134,7 +145,7 @@ class CheckoutView(View):
             messages.error(request, "Prosím vyplňte všetky povinné polia.")
             return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
 
-        # kupón
+        # ✅ Kupón
         coupon_code = form.cleaned_data.get("coupon_code", "").strip()
         discount = Decimal("0.00")
         if coupon_code:
@@ -143,21 +154,21 @@ class CheckoutView(View):
                 pct = Decimal(coupon.discount_percentage) / Decimal("100")
                 discount = (total * pct).quantize(Decimal("0.01"))
                 total = (total - discount).quantize(Decimal("0.01"))
-                messages.success(request, f"Zľava {coupon.discount_percentage}% aplikovaná (-{discount} €). Kód využitý.")
+                messages.success(request, f"Zľava {coupon.discount_percentage}% aplikovaná (-{discount} €).")
                 coupon.active = False
                 coupon.save()
             except Coupon.DoesNotExist:
                 messages.error(request, "Neplatný alebo neaktívny kupón.")
                 return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
 
-        # kontrola skladu pred objednávkou
+        # ✅ Kontrola skladu pred objednávkou
         for item in cart.items.select_related("variant__stock"):
-            stock_qty = getattr(getattr(item.variant, "stock", None), "available", getattr(item.variant, "stock_quantity", 0))
+            stock_qty = getattr(getattr(item.variant, "stock", None), "quantity", getattr(item.variant, "stock_quantity", 0))
             if item.quantity > stock_qty:
                 messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
                 return redirect("cart:cart_detail")
 
-        # vytvorenie objednávky
+        # ✅ Vytvorenie objednávky
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
             status='pending_payment',
@@ -169,7 +180,7 @@ class CheckoutView(View):
             shipping_address=f"{form.cleaned_data['shipping_street']}, {form.cleaned_data['shipping_city']} {form.cleaned_data['shipping_postcode']} {form.cleaned_data['shipping_country']}",
         )
 
-        # uloženie položiek a odpočet skladu
+        # ✅ Uloženie položiek a odpočet skladu
         for item in cart.items.all():
             OrderItem.objects.create(
                 order=order,
@@ -185,16 +196,16 @@ class CheckoutView(View):
                 item.variant.stock_quantity = max(getattr(item.variant, "stock_quantity", 0) - item.quantity, 0)
                 item.variant.save()
 
-        # vernostné body
+        # ✅ Vernostné body
         if request.user.is_authenticated and hasattr(request.user, "profile"):
             earned_points = int(total // Decimal("10"))
             request.user.profile.loyalty_points += earned_points
             request.user.profile.save()
-            messages.info(request, f"Získali ste {earned_points} vernostných bodov!")
+            messages.info(request, f"🎁 Získali ste {earned_points} vernostných bodov!")
 
-        # vyprázdniť košík
+        # ✅ Vyprázdniť košík
         cart.items.all().delete()
         request.session["last_order_created_for_cart"] = cart.pk
 
-        messages.success(request, "Objednávka vytvorená. Pokračujem na platbu.")
+        messages.success(request, "✅ Objednávka bola úspešne vytvorená. Pokračujte na platbu.")
         return redirect("payments:payment_process", order_id=order.pk)

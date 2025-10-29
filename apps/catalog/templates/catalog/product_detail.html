@@ -20,7 +20,7 @@
             <p class="fw-bold fs-4">{{ product.price }} {{ product.currency }}</p>
 
             <!-- ✅ Add to Cart form -->
-            <form method="post" action="{% url 'add_to_cart' product.id %}" class="mt-3">
+            <form method="post" action="{% url 'cart:add_to_cart' product.id %}" class="mt-3">
                 {% csrf_token %}
                 <div class="input-group" style="max-width: 200px;">
                     <input type="number" name="quantity" value="1" min="1" class="form-control text-center">
