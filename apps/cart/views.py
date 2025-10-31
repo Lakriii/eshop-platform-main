@@ -7,6 +7,8 @@ from apps.catalog.models import ProductVariant
 from apps.orders.models import Order, OrderItem, Coupon
 from apps.orders.forms import CheckoutForm
 from django.db import transaction
+from apps.accounts.models import Profile
+
 
 
 def get_or_create_cart(request):
@@ -170,12 +172,24 @@ class CheckoutView(View):
                 item.variant.stock_quantity = max(getattr(item.variant, "stock_quantity", 0) - item.quantity, 0)
                 item.variant.save()
 
-        # ✅ Vernostné body
-        if request.user.is_authenticated and hasattr(request.user, "profile"):
-            earned_points = int(total // Decimal("10"))
-            request.user.profile.loyalty_points += earned_points
-            request.user.profile.save()
-            messages.info(request, f"🎁 Získali ste {earned_points} vernostných bodov!")
+# v CheckoutView.post po vytvorení objednávky
+            if request.user.is_authenticated:
+                profile, created = Profile.objects.get_or_create(user=request.user)
+                earned_points = int(total // Decimal("10"))
+                profile.loyalty_points += earned_points
+                profile.save()
+                messages.info(request, f"🎁 Získali ste {earned_points} vernostných bodov!")
+
+    # Použitie bodov ako zľava
+                if form.cleaned_data.get("use_loyalty_points"):
+                    available_points = profile.loyalty_points
+                    discount_percentage = min(available_points // 100 * 10, 50)  # max 50% zľava
+                    discount_amount = (total * discount_percentage / 100).quantize(Decimal("0.01"))
+                    total = (total - discount_amount).quantize(Decimal("0.01"))
+                    profile.loyalty_points -= (discount_percentage // 10) * 100
+                    profile.save()
+                    messages.success(request, f"💰 Použité vernostné body! Zľava {discount_percentage}% (-{discount_amount} €).")
+
 
         # ✅ Vyprázdniť košík
         cart.items.all().delete()

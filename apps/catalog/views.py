@@ -39,7 +39,6 @@ class CategoryDetailView(ListView):
     model = Product
     template_name = "catalog/category_detail.html"
     context_object_name = "products"
-
     def get_queryset(self):
         self.category = get_object_or_404(Category, slug=self.kwargs["slug"], is_active=True)
         return Product.objects.filter(category=self.category, is_active=True)
@@ -80,7 +79,7 @@ class ProductUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = "catalog/product_form.html"
-    success_url = reverse_lazy("catalog")
+    success_url = reverse_lazy("catalog:product_list")
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)

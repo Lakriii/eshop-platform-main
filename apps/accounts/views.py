@@ -1,3 +1,7 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
-# Create your views here.
+@login_required
+def profile_view(request):
+    # Tu môžeš pridávať aj body, objednávky atď.
+    return render(request, "accounts/profile.html", {"user": request.user})
