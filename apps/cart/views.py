@@ -121,9 +121,10 @@ class CheckoutView(View):
             messages.error(request, "Prosím vyplňte všetky povinné polia.")
             return render(request, "cart/checkout.html", {"cart": cart, "form": form, "total": total})
 
-        # ✅ Kupón
+            # ✅ Kupón
         coupon_code = form.cleaned_data.get("coupon_code", "").strip()
         discount = Decimal("0.00")
+        coupon = None
         if coupon_code:
             try:
                 coupon = Coupon.objects.get(code__iexact=coupon_code, active=True)
@@ -144,7 +145,7 @@ class CheckoutView(View):
                 messages.error(request, f"Nedostatok skladom: {item.variant.product.name}. Max: {stock_qty}")
                 return redirect("cart:cart_detail")
 
-        # ✅ Vytvorenie objednávky
+            # ✅ Vytvorenie objednávky vrátane kupónu
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
             status='pending_payment',
@@ -154,6 +155,7 @@ class CheckoutView(View):
             billing_phone=form.cleaned_data['phone'],
             billing_address=f"{form.cleaned_data['billing_street']}, {form.cleaned_data['billing_city']} {form.cleaned_data['billing_postcode']} {form.cleaned_data['billing_country']}",
             shipping_address=f"{form.cleaned_data['shipping_street']}, {form.cleaned_data['shipping_city']} {form.cleaned_data['shipping_postcode']} {form.cleaned_data['shipping_country']}",
+            coupon=coupon if coupon_code else None,  # tu priradíš kupón
         )
 
         # ✅ Uloženie položiek a odpočet skladu

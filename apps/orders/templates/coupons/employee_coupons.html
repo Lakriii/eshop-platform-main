@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Správa kupónov (zamestnanec)</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Vytvoriť kupón</button>
+</form>
+
+<hr>
+
+<h3>Existujúce kupóny</h3>
+<table class="table">
+    <tr>
+        <th>Kód</th>
+        <th>Zľava (%)</th>
+        <th>Aktívny</th>
+        <th>Vytvoril</th>
+    </tr>
+    {% for coupon in coupons %}
+    <tr>
+        <td>{{ coupon.code }}</td>
+        <td>{{ coupon.discount_percentage }}</td>
+        <td>{{ coupon.active }}</td>
+        <td>{{ coupon.created_by }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

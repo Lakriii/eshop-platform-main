@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:pk>/', OrderDetailView.as_view(), name='order_detail'),
     path('payment/<int:pk>/', PaymentView.as_view(), name='payment_process'),
     path('thank-you/<int:pk>/', ThankYouView.as_view(), name='thank_you'),
+    path("employee/coupons/", OrderListView.as_view(), name="employee_coupons"),
 ]

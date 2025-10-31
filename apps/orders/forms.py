@@ -1,7 +1,9 @@
 from django import forms
 from django.core.validators import RegexValidator, EmailValidator
+from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit, Fieldset
+from .models import Coupon
 
 phone_validator = RegexValidator(
     regex=r'^\+?\d{7,15}$',
@@ -12,6 +14,12 @@ postcode_validator = RegexValidator(
     regex=r'^\d{3,10}$',
     message="PSČ musí obsahovať 3-10 číslic."
 )
+
+class CouponCreateForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = ["code", "discount_percentage", "active"]
+
 
 class CheckoutForm(forms.Form):
     full_name = forms.CharField(label="Meno a priezvisko", max_length=100)
@@ -33,7 +41,6 @@ class CheckoutForm(forms.Form):
         help_text="Zadajte kód kupónu pre zľavu (voliteľné)."
     )
     
-    # Nové pole: použiť body
     use_loyalty_points = forms.BooleanField(
         label="Chcem použiť moje vernostné body na zľavu",
         required=False
@@ -41,39 +48,29 @@ class CheckoutForm(forms.Form):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = user  # prístup k aktuálnemu používateľovi
+        self.user = user
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.layout = Layout(
             Fieldset(
                 "🧍‍ Osobné údaje",
-                Row(
-                    Column("full_name", css_class="col-md-6"),
-                    Column("email", css_class="col-md-6"),
-                ),
+                Row(Column("full_name", css_class="col-md-6"),
+                    Column("email", css_class="col-md-6")),
                 Row(Column("phone", css_class="col-md-6")),
             ),
             Fieldset(
                 "🧾 Fakturačná adresa",
-                Row(
-                    Column("billing_street", css_class="col-md-6"),
-                    Column("billing_city", css_class="col-md-6"),
-                ),
-                Row(
-                    Column("billing_postcode", css_class="col-md-3"),
-                    Column("billing_country", css_class="col-md-3"),
-                ),
+                Row(Column("billing_street", css_class="col-md-6"),
+                    Column("billing_city", css_class="col-md-6")),
+                Row(Column("billing_postcode", css_class="col-md-3"),
+                    Column("billing_country", css_class="col-md-3")),
             ),
             Fieldset(
                 "📦 Doručovacia adresa",
-                Row(
-                    Column("shipping_street", css_class="col-md-6"),
-                    Column("shipping_city", css_class="col-md-6"),
-                ),
-                Row(
-                    Column("shipping_postcode", css_class="col-md-3"),
-                    Column("shipping_country", css_class="col-md-3"),
-                ),
+                Row(Column("shipping_street", css_class="col-md-6"),
+                    Column("shipping_city", css_class="col-md-6")),
+                Row(Column("shipping_postcode", css_class="col-md-3"),
+                    Column("shipping_country", css_class="col-md-3")),
             ),
             Fieldset(
                 "🎟️ Kupón",
@@ -86,6 +83,18 @@ class CheckoutForm(forms.Form):
             Submit("submit", "Uložiť a prejsť k platbe", css_class="btn btn-success btn-lg mt-3 w-100")
         )
 
+    def clean_coupon_code(self):
+        code = self.cleaned_data.get("coupon_code")
+        if code:
+            try:
+                coupon = Coupon.objects.get(code__iexact=code)
+            except Coupon.DoesNotExist:
+                raise ValidationError("Tento kupón neexistuje.")
+            if not coupon.is_valid():
+                raise ValidationError("Tento kupón už nie je platný.")
+            self.cleaned_data['coupon'] = coupon
+        return code
+
     def get_loyalty_discount(self):
         """Vypočíta % zľavu podľa vernostných bodov"""
         if self.cleaned_data.get("use_loyalty_points") and self.user and hasattr(self.user, "profile"):
@@ -93,3 +102,15 @@ class CheckoutForm(forms.Form):
             discount = points * 0.1  # 1 bod = 0.1 %
             return min(discount, 20)  # max 20 %
         return 0
+
+    def get_coupon_discount(self):
+        """Vracia % zľavu z kupónu"""
+        coupon = self.cleaned_data.get("coupon")
+        if coupon:
+            return coupon.discount_percentage
+        return 0
+
+    def get_total_discount(self):
+        """Spočíta celkovú % zľavu kombináciou bodov a kupónu"""
+        total_discount = self.get_loyalty_discount() + self.get_coupon_discount()
+        return min(total_discount, 50)  # max 50 %

@@ -1,5 +1,24 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_percentage = models.PositiveIntegerField(default=0)
+    active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_coupons"
+    )
+
+    def __str__(self):
+        return f"{self.code} - {self.discount_percentage}%"
+
+    def is_valid(self):
+        return self.active
+
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -21,8 +40,29 @@ class Order(models.Model):
     billing_address = models.TextField(blank=True)
     shipping_address = models.TextField(blank=True)
 
+    # 🟢 Kupón a vernostné body
+    coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
+    used_loyalty_points = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f"Order {self.pk} - {self.status}"
+
+    def calculate_discount(self):
+        """Vypočíta zľavu podľa kupónu a vernostných bodov."""
+        discount = 0
+
+        # Vernostné body: 100 bodov = 10%, max 20%
+        if hasattr(self.user, 'profile'):
+            points = self.used_loyalty_points
+            points_discount = min((points / 100) * 10, 20)
+            discount += points_discount
+
+        # Kupón
+        if self.coupon and self.coupon.is_valid():
+            discount += self.coupon.discount_percentage
+
+        # Max zľava 50%
+        return min(discount, 50)
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
@@ -43,11 +83,3 @@ class PaymentRecord(models.Model):
 
     def __str__(self):
         return f"Payment {self.pk} for Order {self.order.pk} - {self.status}"
-
-class Coupon(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    discount_percentage = models.PositiveIntegerField(default=0)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.code} - {self.discount_percentage}%"
