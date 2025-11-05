@@ -1,0 +1,7 @@
+<form method="post" action="{% url 'orders:apply_coupon' %}">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+        <input type="text" name="coupon_code" class="form-control" placeholder="Zadaj kupón">
+        <button type="submit" class="btn btn-primary">Použiť kupón</button>
+    </div>
+</form>

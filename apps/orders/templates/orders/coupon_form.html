@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Kupón{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2>{{ view.object|yesno:"Upraviť kupón,Pridať kupón" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary mt-3 w-100">💾 Uložiť</button>
+    </form>
+</div>
+{% endblock %}

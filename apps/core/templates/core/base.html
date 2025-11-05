@@ -40,10 +40,17 @@
                             <a class="nav-link" href="{% url 'accounts:profile' %}">My Account</a>
                         </li>
 
-                        <!-- Vernostné body -->
+                        <!-- 🔹 Vernostné body -->
                         {% if user.profile %}
                         <li class="nav-item">
                             <span class="nav-link text-warning">💎 Body: {{ user.profile.loyalty_points }}</span>
+                        </li>
+                        {% endif %}
+
+                        <!-- 🔹 Kupóny pre zamestnancov -->
+                        {% if user.is_staff %}
+                        <li class="nav-item">
+                            <a class="nav-link text-info fw-bold" href="{% url 'orders:coupon_list' %}">Kupóny</a>
                         </li>
                         {% endif %}
 

@@ -46,7 +46,7 @@
 
         <!-- Tlačidlo Pokračovať k platbe -->
         <div class="mt-4 text-end">
-            <form method="post" action="{% url 'cart:cart_checkout' %}">
+            <form method="post" action="{% url 'cart:checkout' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-success btn-lg">Pokračovať k platbe</button>
             </form>

@@ -7,47 +7,50 @@
 <div class="container mt-5">
     <h1>Pokladňa</h1>
 
-    <!-- Zobrazenie Django messages -->
+    <!-- Zobrazenie správ -->
     {% if messages %}
-      <div class="mt-3">
-        {% for message in messages %}
-          <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      </div>
+        <div class="mt-3">
+            {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 
-    <form method="post">
+    <!-- Formulár s presnou URL -->
+    <form method="post" action="{% url 'cart:checkout' %}">
         {% csrf_token %}
         {{ form|crispy }}
 
-        <!-- Vernostné body -->
         {% if user.is_authenticated and user.profile %}
         <div class="mb-3">
             <p>💎 Dostupné vernostné body: {{ user.profile.loyalty_points }}</p>
         </div>
         {% endif %}
 
-        <h3 class="mt-4">Položky v košíku:</h3>
-        <ul>
+        <h3 class="mt-4">🛒 Položky v košíku:</h3>
+        <ul class="list-group mb-3">
             {% for item in cart.items.all %}
-                <li>{{ item.variant.product.name }} × {{ item.quantity }} = {{ item.line_total }} €</li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.variant.product.name }} × {{ item.quantity }}
+                    <span>{{ item.line_total }} €</span>
+                </li>
             {% endfor %}
         </ul>
 
         {% if discount %}
-            <p class="text-success">Zľava: -{{ discount }} €</p>
+            <p class="text-success">🎟️ Zľava: -{{ discount }} €</p>
         {% endif %}
 
         {% if loyalty_discount %}
-            <p class="text-info">Zľava z vernostných bodov: -{{ loyalty_discount }} €</p>
+            <p class="text-info">💎 Zľava z vernostných bodov: -{{ loyalty_discount }} €</p>
         {% endif %}
 
-        <p><strong>Spolu: {{ total }} €</strong></p>
+        <p class="fs-5"><strong>Spolu: {{ total }} €</strong></p>
 
         <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
-            💳 Uložiť a prejsť k platbe
+            💳 Uložiť objednávku a prejsť k platbe
         </button>
     </form>
 </div>
