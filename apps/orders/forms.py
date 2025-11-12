@@ -46,9 +46,10 @@ class CheckoutForm(forms.Form):
         required=False
     )
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, cart_total=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
+        self.cart_total = cart_total  # teraz je možné odovzdať z view
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.layout = Layout(
