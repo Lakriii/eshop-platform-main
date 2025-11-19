@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1>Welcome to the E-Shop!</h1>
+    {% if user.is_authenticated %}
+        <p>Hello, {{ user.username }}!</p>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Logout</a>
+    {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn btn-primary">Login</a>
+        <a href="{% url 'accounts:register' %}" class="btn btn-success">Register</a>
+    {% endif %}
+</div>
+{% endblock %}

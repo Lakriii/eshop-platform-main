@@ -39,13 +39,13 @@ INSTALLED_APPS = [
     "corsheaders",
 
     # local apps
-    "apps.core",
-    "apps.accounts",
-    "apps.catalog",
-    "apps.cart",
-    "apps.orders",
-    "apps.payments",
-    "apps.api",
+    "core",
+    "accounts",
+    "catalog",
+    "cart",
+    "orders",
+    "payments",
+    "api",
     "crispy_forms",
     "crispy_bootstrap5",
 ]
