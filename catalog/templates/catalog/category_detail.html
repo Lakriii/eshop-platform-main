@@ -7,9 +7,11 @@
 
     {% if subcategories %}
     <div class="mb-4 text-center">
-        <h5>Subcategories:</h5>
+        <h5>Subkategórie:</h5>
         {% for sub in subcategories %}
-        <a href="{% url 'category_detail' sub.slug %}" class="badge bg-primary text-decoration-none mx-1">{{ sub.name }}</a>
+        <a href="{% url 'catalog:category_detail' sub.slug %}" class="badge bg-primary text-decoration-none mx-1">
+            {{ sub.name }}
+        </a>
         {% endfor %}
     </div>
     {% endif %}
@@ -27,12 +29,16 @@
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text text-muted">{{ product.short_description|truncatewords:15 }}</p>
                     <p class="fw-bold">{{ product.price }} {{ product.currency }}</p>
-                    <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary">View Details</a>
+                    
+                    <!-- TENTO RIADOK JE JEDINÁ ZMENA V ŠABLÓNE -->
+                    <a href="{% url 'catalog:product_detail' product.slug %}" class="btn btn-primary">
+                        Zobraziť detail
+                    </a>
                 </div>
             </div>
         </div>
         {% empty %}
-        <p class="text-center text-muted">No products found in this category.</p>
+        <p class="text-center text-muted">V tejto kategórii zatiaľ nie sú žiadne produkty.</p>
         {% endfor %}
     </div>
 </div>
