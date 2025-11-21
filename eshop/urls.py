@@ -26,7 +26,7 @@ urlpatterns = [
    # path('api/', include('apps.api.urls')),
     path('', include('core.urls')),
     path('catalog/', include('catalog.urls')),
-    path("cart/", include(("cart.urls"), namespace="cart")),
+    path("cart/", include("cart.urls", namespace="cart")),
     path("orders/", include(("orders.urls", "orders"), namespace="orders")),
     path("payments/", include("payments.urls", namespace="payments")),
     path("accounts/", include("accounts.urls", namespace="accounts")),
