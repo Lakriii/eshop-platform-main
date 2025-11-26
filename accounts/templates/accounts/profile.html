@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+
 {% block title %}Môj profil{% endblock %}
 
 {% block content %}
@@ -8,4 +9,6 @@
 <p><strong>E-mail:</strong> {{ user.email }}</p>
 <p><strong>Vernostné body:</strong> {{ user.profile.loyalty_points }}</p>
 
+<!-- Logout button pre test -->
+<p><a href="{% url 'accounts:logout' %}" name="logout" class="btn btn-danger">Logout</a></p>
 {% endblock %}

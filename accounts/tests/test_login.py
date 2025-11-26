@@ -40,10 +40,12 @@ def test_login_invalid_password(client, user):
         "password": "wrong"
     })
 
-    assert response.status_code == 200  # Nie redirect
-    assert "accounts/login.html" in [t.name for t in response.templates]
-    assert "Nesprávne" in response.content.decode() or "invalid" in response.content.decode().lower()
+    assert response.status_code == 200
+    assert "core/login.html" in [t.name for t in response.templates]
 
+    # Skontrolujeme chyby formulára
+    form = response.context["form"]
+    assert form.non_field_errors()  # musí obsahovať aspoň jednu chybu
 
 @pytest.mark.django_db
 def test_login_missing_fields(client):
@@ -51,7 +53,8 @@ def test_login_missing_fields(client):
     response = client.post(reverse("accounts:login"), {})
 
     assert response.status_code == 200
-    assert "accounts/login.html" in [t.name for t in response.templates]
+    assert "core/login.html" in [t.name for t in response.templates]
+
     form = response.context["form"]
-    assert form.errors
+    assert form.errors  # aspoň jedna chyba
     assert "username" in form.errors or "password" in form.errors

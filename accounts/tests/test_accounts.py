@@ -1,6 +1,9 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 import pytest
+
+User = get_user_model()
+
 
 @pytest.mark.django_db
 def test_register_invalid_password_mismatch(client):
@@ -12,12 +15,11 @@ def test_register_invalid_password_mismatch(client):
         "password2": "Heslo99999",
     })
 
-    # Užívateľ sa nesmie vytvoriť
     assert User.objects.filter(username="testuser").exists() is False
-
-    # View sa nesmie redirectnúť – má vrátiť form s chybami
     assert resp.status_code == 200
     assert "password2" in resp.context["form"].errors
+
+
 @pytest.mark.django_db
 def test_register_invalid_existing_username(client):
     User.objects.create_user(username="miso", password="xxxx")
@@ -32,6 +34,8 @@ def test_register_invalid_existing_username(client):
 
     assert resp.status_code == 200
     assert "username" in resp.context["form"].errors
+
+
 @pytest.mark.django_db
 def test_register_invalid_weak_password(client):
     url = reverse("accounts:register")
@@ -44,4 +48,3 @@ def test_register_invalid_weak_password(client):
 
     assert resp.status_code == 200
     assert "password2" in resp.context["form"].errors
-    # Django vráti viac chýb – stačí skontrolovať prítomnosť field error
