@@ -6,6 +6,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from .models import Product, Category
 from .forms import ProductForm, ProductImageFormSet
+from django.views.generic import ListView
+from .models import Product, Category
+from .filters import ProductFilter  # ← nový import
 
 
 # --- MIXIN ---
@@ -14,13 +17,32 @@ class StaffRequiredMixin(UserPassesTestMixin):
         return self.request.user.is_staff
 
 
-# --- PUBLIC VIEWS ---
+# catalog/views.py
+
 class ProductListView(ListView):
     model = Product
     template_name = "catalog/product_list.html"
     context_object_name = "products"
-    queryset = Product.objects.filter(is_active=True).select_related("category")
+    paginate_by = 24  # pekné 4x6 na stránku
 
+    def get_queryset(self):
+        queryset = Product.objects.filter(is_active=True).select_related("category")
+
+        self.filter = ProductFilter(self.request.GET, queryset=queryset)
+        return self.filter.qs.distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["filter"] = self.filter
+        context["categories"] = Category.objects.filter(is_active=True, parent__isnull=False)
+
+        # Pre pekné zobrazenie aktuálnej kategórie ak je filtrovaná
+        if self.filter.form['category'].value():
+            context["current_category"] = Category.objects.filter(
+                id=self.filter.form['category'].value()
+            ).first()
+
+        return context
 
 class ProductDetailView(DetailView):
     model = Product

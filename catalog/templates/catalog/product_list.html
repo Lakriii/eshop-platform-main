@@ -1,37 +1,100 @@
 {% extends "core/base.html" %}
-{% block title %}Products{% endblock %}
+{% load crispy_forms_tags %}
+
+{% block title %}Produkty{% endblock %}
 
 {% block content %}
-<h1>Products</h1>
+<div class="container py-4">
+    <div class="row">
+        <!-- FILTER PANEL -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filtrovať produkty</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="filter-form">
+                        {{ filter.form|crispy }}
 
-{% if user.is_staff %}
-    <a href="{% url 'catalog:product_create' %}" class="btn btn-primary mb-3">Add Product</a>
-{% endif %}
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">Hľadať</button>
+                            <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">
+                                Zrušiť filter
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Active</th>
             {% if user.is_staff %}
-                <th>Actions</th>
+            <div class="mt-3">
+                <a href="{% url 'catalog:product_create' %}" class="btn btn-success w-100">
+                    + Pridať produkt
+                </a>
+            </div>
             {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for product in products %}
-        <tr>
-            <td><a href="{% url 'catalog:product_detail' product.slug %}">{{ product.name }}</a></td>
-            <td>{{ product.price }} {{ product.currency }}</td>
-            <td>{{ product.is_active }}</td>
-            {% if user.is_staff %}
-            <td>
-                <a href="{% url 'catalog:product_edit' product.pk %}" class="btn btn-sm btn-warning">Edit</a>
-            </td>
+        </div>
+
+        <!-- PRODUCT GRID -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    Produkty
+                    {% if current_category %}
+                        <small class="text-muted">→ {{ current_category.name }}</small>
+                    {% endif %}
+                </h1>
+                <span class="badge bg-secondary fs-6">{{ paginator.count }} produktov</span>
+            </div>
+
+            {% if products %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-cols-xl-3 g-4">
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm hover-shadow">
+                        {% if product.images.first %}
+                            <img src="{{ product.images.first.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light border d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">Bez obrázka</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a href="{% url 'catalog:product_detail' product.slug %}" class="text-decoration-none">
+                                    {{ product.name }}
+                                </a>
+                            </h5>
+                            <p class="card-text text-muted small flex-grow-1">
+                                {{ product.short_description|default:"Bez popisu"|truncatewords:15 }}
+                            </p>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="h4 mb-0 text-primary">{{ product.price }} €</span>
+                                    {% if product.variants.all %}
+                                        <small class="text-success">Skladom</small>
+                                    {% else %}
+                                        <small class="text-danger">Vypredané</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- PAGINATION -->
+            {% include "partials/pagination.html" %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <h3>Žiadne produkty nenájdené</h3>
+                <p class="text-muted">Skús zmeniť filtre alebo vyhľadávanie.</p>
+            </div>
             {% endif %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </div>
+    </div>
+</div>
 {% endblock %}
