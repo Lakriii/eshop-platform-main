@@ -7,7 +7,10 @@ from cart.models import Cart, CartItem
 
 @pytest.fixture
 def user(db):
-    return get_user_model().objects.create_user(username="testuser", password="pass123")
+    return get_user_model().objects.create_user(
+        username="testuser",
+        password="pass123",
+    )
 
 
 @pytest.fixture
@@ -28,7 +31,11 @@ def product(db):
 
 @pytest.fixture
 def variant(product):
-    v = ProductVariant.objects.create(product=product, sku="NOTE-001", price=999)
+    v = ProductVariant.objects.create(
+        product=product,
+        sku="NOTE-001",
+        price=999,
+    )
     Stock.objects.create(variant=v, quantity=100)
     return v
 
@@ -40,15 +47,16 @@ def cart(user):
 
 @pytest.fixture
 def cart_with_session(auth_client, cart):
-    auth_client.session["cart_id"] = cart.pk
-    auth_client.session.save()
+    session = auth_client.session
+    session["cart_id"] = cart.pk
+    session.save()
     return cart
 
 
 @pytest.fixture
-def cart_item(cart, variant):
+def cart_item(cart_with_session, variant):
     return CartItem.objects.create(
-        cart=cart,
+        cart=cart_with_session,
         variant=variant,
         quantity=2,
         price=999,

@@ -6,7 +6,7 @@ def test_logout(client, user):
     client.login(username="tester", password="password123")
 
     url = reverse("accounts:logout")
-    response = client.get(url)
+    response = client.post(url)  # ← POST namiesto GET
 
     assert response.status_code == 302
     assert response.url == reverse("accounts:login")

@@ -151,6 +151,7 @@ class Order(models.Model):
         total = self.total - coupon_amount - loyalty_amount
         return max(total, Decimal("0.00"))
 class OrderItem(models.Model):
+    order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, default=1)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -160,6 +161,7 @@ class OrderItem(models.Model):
 
     def sku(self):
         return self.product.sku
+
 
 
 class PaymentRecord(models.Model):

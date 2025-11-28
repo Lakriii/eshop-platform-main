@@ -1,4 +1,3 @@
-# catalog/tests/test_public_views.py
 import pytest
 from catalog.models import Product
 
@@ -12,7 +11,7 @@ def test_product_list_view(client, product):
 
 @pytest.mark.django_db
 def test_product_detail_view(client, product):
-    response = client.get(f"/catalog/{product.slug}/")
+    response = client.get(f"/catalog/product/{product.slug}/")
     assert response.status_code == 200
     assert product.name.encode() in response.content
 
@@ -21,7 +20,7 @@ def test_product_detail_view(client, product):
 def test_product_detail_404_when_inactive(client, product):
     product.is_active = False
     product.save()
-    response = client.get(f"/catalog/{product.slug}/")
+    response = client.get(f"/catalog/product/{product.slug}/")
     assert response.status_code == 404
 
 
@@ -69,5 +68,5 @@ def test_404_nonexistent_category(client):
 
 @pytest.mark.django_db
 def test_404_nonexistent_product(client):
-    response = client.get("/catalog/toto-uz-vubec-neexistuje-12345/")
+    response = client.get("/catalog/product/toto-uz-vubec-neexistuje-12345/")
     assert response.status_code == 404

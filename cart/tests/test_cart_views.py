@@ -13,7 +13,11 @@ def test_cart_detail_renders(auth_client, cart_with_session, cart_item):
 @pytest.mark.django_db
 def test_add_to_cart_works(auth_client, variant, cart_with_session):
     url = reverse("cart:add_to_cart", kwargs={"product_id": variant.product.id})
-    response = auth_client.post(url, {"variant_id": variant.id, "quantity": 3}, follow=True)
+    response = auth_client.post(
+        url,
+        {"variant_id": variant.id, "quantity": 3},
+        follow=True,
+    )
     assert response.status_code == 200
     assert CartItem.objects.filter(variant=variant, quantity=3).exists()
 

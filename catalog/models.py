@@ -7,7 +7,13 @@ from django.utils.text import slugify
 class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey(
+        'self', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name='subcategories'  # pridáme related_name
+    )
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -18,6 +24,7 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
 
 # -------------------
 # Product

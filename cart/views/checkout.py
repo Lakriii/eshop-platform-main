@@ -1,56 +1,52 @@
 # cart/views/checkout.py
-from django.views.generic import TemplateView
-from django.shortcuts import redirect
+
+from django.views import View
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from orders.models import Order, OrderItem
+from django.db import transaction
+
 from .cart_core import get_or_create_cart
+from orders.models import Order, OrderItem
 
 
-class CheckoutView(TemplateView):
-    template_name = "cart/checkout.html"
-
-    def dispatch(self, request, *args, **kwargs):
+class CheckoutView(View):
+    def get(self, request):
         cart = get_or_create_cart(request)
-        if not cart.items.exists():
-            messages.error(request, "Košík je prázdny.")
-            return redirect("cart:cart_detail")
-        return super().dispatch(request, *args, **kwargs)
+        return render(request, "cart/checkout.html", {"cart": cart})
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         cart = get_or_create_cart(request)
 
-        # Bezpečnostná kontrola
         if not cart.items.exists():
+            messages.error(request, "Košík je prázdny.")
             return redirect("cart:cart_detail")
 
-        # Vytvoríme objednávku – toto test očakáva
+        # Order používa TENTO model:
+        # billing_name, billing_email, billing_phone, billing_address, shipping_address
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
-            full_name=request.POST.get("full_name"),
-            email=request.POST.get("email"),
-            phone=request.POST.get("phone"),
-            billing_street=request.POST.get("billing_street"),
-            billing_city=request.POST.get("billing_city"),
-            billing_postcode=request.POST.get("billing_postcode"),
-            billing_country=request.POST.get("billing_country"),
-            shipping_street=request.POST.get("shipping_street", request.POST.get("billing_street")),
-            shipping_city=request.POST.get("shipping_city", request.POST.get("billing_city")),
-            shipping_postcode=request.POST.get("shipping_postcode", request.POST.get("billing_postcode")),
-            shipping_country=request.POST.get("shipping_country", request.POST.get("billing_country")),
-            total_price=cart.total_price,
-            status="new",
+
+            billing_name=request.POST.get("billing_name", ""),
+            billing_email=request.POST.get("billing_email", ""),
+            billing_phone=request.POST.get("billing_phone", ""),
+            billing_address=request.POST.get("billing_address", ""),
+            shipping_address=request.POST.get("shipping_address", ""),
+
+            total=cart.total_price,      #  <-- tvoje pole = total (nie total_price)
+           status="pending_payment",    #  <-- alebo 'draft', podľa toho čo chceš
         )
 
-        # Prenesieme položky
+        # OrderItem v modeli má polia: product, quantity, price
         for item in cart.items.all():
             OrderItem.objects.create(
                 order=order,
-                variant=item.variant,
+                product=item.variant.product,       # ← tvoje CartItem má product alebo variant? (v teste máš variant)
                 quantity=item.quantity,
-                price=item.variant.price,  # alebo item.price, podľa tvojho modelu
+                price=item.variant.price,   # alebo item.variant.price ak používaš varianty
             )
 
-        # Vyprázdnime košík
+        # vymazanie košíka
         cart.items.all().delete()
         request.session.pop("cart_id", None)
 
