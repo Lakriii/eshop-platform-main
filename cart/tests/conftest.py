@@ -45,13 +45,36 @@ def cart(user):
     return Cart.objects.create(user=user)
 
 
+# cart/tests/conftest.py → NAHRAĎ tento fixture:
+
 @pytest.fixture
-def cart_with_session(auth_client, cart):
+def cart_with_session(auth_client, cart, variant):
+    """
+    Plne funkčný fixture pre modelový aj session-based cart.
+    Toto je to, čo očakáva 99 % Django e-shopov.
+    """
+    # 1. Uložíme cart_id (pre modelový cart)
     session = auth_client.session
     session["cart_id"] = cart.pk
-    session.save()
-    return cart
 
+    # 2. NAPLNÍME session["cart"] – TO JE KĽÚČOVÉ PRE CHECKOUT!
+    session["cart"] = {
+        str(variant.id): {           # variant.id, nie product.id!
+            "quantity": 2,
+            "price": "999.00"        # musí byť string (JSON serializácia)
+        }
+    }
+    session.save()
+
+    # 3. Vytvoríme aj reálny CartItem v DB (pre testy, ktoré ho kontrolujú)
+    CartItem.objects.create(
+        cart=cart,
+        variant=variant,
+        quantity=2,
+        price=999
+    )
+
+    return cart
 
 @pytest.fixture
 def cart_item(cart_with_session, variant):

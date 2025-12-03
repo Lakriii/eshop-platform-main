@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.views import View
-from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
 from orders.models import Order
+
 
 class PaymentView(View):
     template_name = "orders/payment.html"
@@ -22,14 +24,18 @@ class PaymentView(View):
 
         order.status = "paid"
         order.save()
-        messages.success(request, "✅ Platba bola úspešná. Ďakujeme za objednávku!")
+        messages.success(request, "Platba bola úspešná. Ďakujeme za objednávku!")
         return redirect("orders:thank_you", pk=order.pk)
 
 
-class ThankYouView(TemplateView):
+class ThankYouView(LoginRequiredMixin, DetailView):
+    model = Order
     template_name = "orders/thank_you.html"
+    context_object_name = "order"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["order"] = get_object_or_404(Order, pk=self.kwargs.get("pk"))
-        return context
+    def get_object(self):
+        order = get_object_or_404(Order, pk=self.kwargs["pk"])
+        if order.user != self.request.user and not self.request.user.is_staff:
+            messages.error(self.request, "Nemáte oprávnenie zobraziť túto stránku.")
+            return redirect("orders:order_list")
+        return order

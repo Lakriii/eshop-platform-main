@@ -1,3 +1,4 @@
+# orders/urls.py – tvoj aktuálny súbor
 from django.urls import path
 from .views import OrderDetailView, OrderListView, PaymentView, ThankYouView
 from . import views
@@ -8,7 +9,9 @@ urlpatterns = [
     path('', OrderListView.as_view(), name='order_list'),
     path('<int:pk>/', OrderDetailView.as_view(), name='order_detail'),
     path('payment/<int:pk>/', PaymentView.as_view(), name='payment_process'),
-    path('thank-you/<int:pk>/', ThankYouView.as_view(), name='thank_you'),
+    path('thank-you/<int:pk>/', ThankYouView.as_view(), name='thank_you'),  # ← už máš, super!
+    
+    # Zvyšok...
     path("employee/coupons/", OrderListView.as_view(), name="employee_coupons"),
     path("coupons/", views.CouponListView.as_view(), name="coupon_list"),
     path("coupons/add/", views.CouponCreateView.as_view(), name="coupon_add"),

@@ -1,15 +1,48 @@
-{% extends "core/base.html" %}
-{% block title %}Ďakujeme za objednávku{% endblock %}
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Ďakujeme za objednávku #{{ order.pk }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 text-center">
-    <h1>🎉 Ďakujeme za Vašu objednávku!</h1>
-    <p>Objednávka č. <strong>{{ order.id }}</strong> bola úspešne zaplatená.</p>
-    <p>Na Váš e-mail (<strong>{{ order.billing_email }}</strong>) sme zaslali potvrdenie.</p>
+<div class="container py-5 text-center">
+    <div class="mb-5">
+        <h1 class="display-3 text-success fw-bold">Ďakujeme za nákup!</h1>
+        <p class="lead mt-3">Vaša objednávka bola úspešne spracovaná</p>
+    </div>
 
-    <div class="mt-4">
-        <a href="{% url 'order_detail' order.pk %}" class="btn btn-outline-primary">Zobraziť objednávku</a>
-        <a href="{% url 'catalog' %}" class="btn btn-primary ms-2">Pokračovať v nákupe</a>
+    <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0">Objednávka č. {{ order.pk }}</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Dátum:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Stav:</strong> 
+                <span class="badge bg-success fs-6">Zaplatené</span>
+            </p>
+            <p><strong>Celková suma:</strong> 
+                <span class="h4 text-success">{{ order.total|floatformat:2 }} €</span>
+            </p>
+            {% if order.coupon %}
+                <p><strong>Zľava (kupón {{ order.coupon.code }}):</strong> -{{ order.calculate_coupon_discount_amount }} €</p>
+            {% endif %}
+            {% if order.used_loyalty_points > 0 %}
+                <p><strong>Zľava (vernostné body):</strong> -{{ order.calculate_loyalty_discount_amount }} €</p>
+            {% endif %}
+
+            <hr>
+
+            <h5>Doručenie</h5>
+            <p class="mb-0">{{ order.shipping_address|linebreaksbr }}</p>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-lg btn-primary">
+            Pokračovať v nákupe
+        </a>
+        <a href="{% url 'orders:order_list' %}" class="btn btn-lg btn-outline-success ms-3">
+            Moje objednávky
+        </a>
     </div>
 </div>
 {% endblock %}
