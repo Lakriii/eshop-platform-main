@@ -19,8 +19,42 @@
         <div class="w-100">
             {% block dashboard_content %}
             <!-- Defaultný obsah, ktorý sa prepíše vo view šablóne -->
-            <h1>Prehľad</h1>
-            <p>Tu budú grafy, prehľady a štatistiky.</p>
+
+            <div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Objednávky celkom</h5>
+        <p class="card-text fs-4">{{ total_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Nové objednávky dnes</h5>
+        <p class="card-text fs-4">{{ new_orders_today }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Celkový obrat</h5>
+        <p class="card-text fs-4">{{ total_revenue }} €</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Zákazníci</h5>
+        <p class="card-text fs-4">{{ total_customers }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
             {% endblock %}
         </div>
     </div>

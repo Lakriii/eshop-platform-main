@@ -2,8 +2,36 @@
 
 
     {% block dashboard_content %}
-<h1>Objednávky</h1>
-<p>Zoznam objednávok bude doplnený.</p>
+<h4>Najnovšie objednávky</h4>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Zákazník</th>
+      <th>Stav</th>
+      <th>Suma</th>
+      <th>Dátum</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in recent_orders %}
+    <tr>
+      <td>{{ order.id }}</td>
+      <td>{{ order.customer.username }}</td>
+      <td>{{ order.status }}</td>
+      <td>{{ order.total }} €</td>
+      <td>{{ order.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="mb-4">
+  <a href="" class="btn btn-primary me-2">Pridať produkt</a>
+  <a href="{% url 'orders:coupon_list' %}" class="btn btn-success me-2">Kupóny</a>
+  <a href="" class="btn btn-warning">Export objednávok</a>
+</div>
+
+
 {% endblock %}
 
 

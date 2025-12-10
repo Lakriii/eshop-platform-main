@@ -1,15 +1,21 @@
-{% extends "core/base.html" %}
+{% extends "dashboard/home.html" %}
 
-{% block content %}
-    {% include "dashboard/dashboard_wrapper.html" %}
-{% endblock %}
+
 
 {% block dashboard_content %}
-<h1>Grafy</h1>
+<div class="row mb-4">
+  <div class="col-md-6">
+    <canvas id="revenueChart"></canvas>
+  </div>
+  <div class="col-md-6">
+    <canvas id="ordersChart"></canvas>
+  </div>
+</div>
+
 <canvas id="salesChart"></canvas>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'dashboard/dashboard.js' %}"></script>
+<script src="static/dashboard/dashboard.js"></script>
 {% endblock %}
