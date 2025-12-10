@@ -1,5 +1,10 @@
-{% extends 'dashboard/base_dashboard.html' %}
+{% extends "core/base.html" %}
+
 {% block content %}
+    {% include "dashboard/dashboard_wrapper.html" %}
+{% endblock %}
+
+{% block dashboard_content %}
 <h1>Zákazníci</h1>
 <p>Zoznam zákazníkov bude doplnený.</p>
 {% endblock %}

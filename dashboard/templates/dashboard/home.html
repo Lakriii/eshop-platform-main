@@ -1,7 +1,28 @@
-{% extends "dashboard/layout.html" %}
-{% block title %}Prehľad{% endblock %}
+{% extends "core/base.html" %}
 
 {% block content %}
-<h1>Prehľad</h1>
-<p>Toto je hlavný dashboard. Sem pôjde graf obratu, objednávok, top produkty...</p>
+<div class="d-flex" style="min-height: 80vh;">
+    <!-- SIDEBAR -->
+    <div class="bg-dark text-white p-4" style="width: 250px;">
+        <h3 class="mb-4">Dashboard</h3>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a href="{% url 'dashboard:home' %}" class="nav-link text-white">🏠 Prehľad</a></li>
+            <li class="nav-item"><a href="{% url 'dashboard:orders' %}" class="nav-link text-white">📦 Objednávky</a></li>
+            <li class="nav-item"><a href="{% url 'dashboard:products' %}" class="nav-link text-white">🛒 Produkty</a></li>
+            <li class="nav-item"><a href="{% url 'dashboard:customers' %}" class="nav-link text-white">👤 Zákazníci</a></li>
+            <li class="nav-item"><a href="{% url 'dashboard:charts' %}" class="nav-link text-white">📊 Grafy</a></li>
+        </ul>
+    </div>
+
+    <!-- DASHBOARD CONTENT -->
+    <div class="flex-grow-1 d-flex justify-content-center align-items-center p-4">
+        <div class="w-100">
+            {% block dashboard_content %}
+            <!-- Defaultný obsah, ktorý sa prepíše vo view šablóne -->
+            <h1>Prehľad</h1>
+            <p>Tu budú grafy, prehľady a štatistiky.</p>
+            {% endblock %}
+        </div>
+    </div>
+</div>
 {% endblock %}
