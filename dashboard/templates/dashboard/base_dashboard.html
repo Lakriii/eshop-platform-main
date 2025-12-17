@@ -1,0 +1,25 @@
+<!-- dashboard/templates/dashboard/base_dashboard.html -->
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+
+        <aside class="col-12 col-md-3 col-lg-2 bg-dark text-white p-4">
+            <h4 class="mb-4">Dashboard</h4>
+            <ul class="nav flex-column gap-2">
+                <li><a href="{% url 'dashboard:home' %}" class="nav-link text-white">🏠 Prehľad</a></li>
+                <li><a href="{% url 'dashboard:orders' %}" class="nav-link text-white">📦 Objednávky</a></li>
+                <li><a href="{% url 'dashboard:products' %}" class="nav-link text-white">🛒 Produkty</a></li>
+                <li><a href="{% url 'dashboard:customers' %}" class="nav-link text-white">👤 Zákazníci</a></li>
+                <li><a href="{% url 'dashboard:charts' %}" class="nav-link text-white">📊 Grafy</a></li>
+            </ul>
+        </aside>
+
+        <main class="col p-4">
+            {% block dashboard_content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+{% endblock %}

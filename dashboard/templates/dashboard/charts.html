@@ -1,21 +1,67 @@
-{% extends "dashboard/home.html" %}
-
-
+<!-- dashboard/templates/dashboard/charts.html -->
+{% extends "dashboard/base_dashboard.html" %}
 
 {% block dashboard_content %}
-<div class="row mb-4">
-  <div class="col-md-6">
-    <canvas id="revenueChart"></canvas>
-  </div>
-  <div class="col-md-6">
-    <canvas id="ordersChart"></canvas>
-  </div>
-</div>
+<h2>Štatistiky objednávok</h2>
 
-<canvas id="salesChart"></canvas>
-{% endblock %}
+<hr>
 
-{% block extra_scripts %}
+<h4>📦 Počet objednávok podľa dní</h4>
+<canvas id="ordersChart" height="100"></canvas>
+
+<hr class="my-5">
+
+<h4>💰 Tržby podľa dní (€)</h4>
+<canvas id="revenueChart" height="100"></canvas>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="static/dashboard/dashboard.js"></script>
+
+<script>
+    const labels = {{ labels|safe }};
+    const ordersData = {{ orders_data|safe }};
+    const revenueData = {{ revenue_data|safe }};
+
+    // GRAF 1 – POČET OBJEDNÁVOK
+    new Chart(document.getElementById('ordersChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Počet objednávok',
+                data: ordersData,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // GRAF 2 – TRŽBY
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Tržby (€)',
+                data: revenueData
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

@@ -156,7 +156,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
-    def product_name(self):
+    def product_name(sf2elf):
         return self.product.name
 
     def sku(self):

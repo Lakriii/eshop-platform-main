@@ -1,62 +1,43 @@
-{% extends "core/base.html" %}
+{% extends "dashboard/base_dashboard.html" %}
 
-{% block content %}
-<div class="d-flex" style="min-height: 80vh;">
-    <!-- SIDEBAR -->
-    <div class="bg-dark text-white p-4" style="width: 250px;">
-        <h3 class="mb-4">Dashboard</h3>
-        <ul class="nav flex-column">
-            <li class="nav-item"><a href="{% url 'dashboard:home' %}" class="nav-link text-white">🏠 Prehľad</a></li>
-            <li class="nav-item"><a href="{% url 'dashboard:orders' %}" class="nav-link text-white">📦 Objednávky</a></li>
-            <li class="nav-item"><a href="{% url 'dashboard:products' %}" class="nav-link text-white">🛒 Produkty</a></li>
-            <li class="nav-item"><a href="{% url 'dashboard:customers' %}" class="nav-link text-white">👤 Zákazníci</a></li>
-            <li class="nav-item"><a href="{% url 'dashboard:charts' %}" class="nav-link text-white">📊 Grafy</a></li>
-        </ul>
-    </div>
+{% block dashboard_content %}
+<h1>Prehľad</h1>
 
-    <!-- DASHBOARD CONTENT -->
-    <div class="flex-grow-1 d-flex justify-content-center align-items-center p-4">
-        <div class="w-100">
-            {% block dashboard_content %}
-            <!-- Defaultný obsah, ktorý sa prepíše vo view šablóne -->
-
-            <div class="row mb-4">
+<div class="row g-4 mt-3">
   <div class="col-md-3">
     <div class="card text-center">
       <div class="card-body">
-        <h5 class="card-title">Objednávky celkom</h5>
-        <p class="card-text fs-4">{{ total_orders }}</p>
+        <h6>Objednávky</h6>
+        <p class="fs-4">{{ total_orders }}</p>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Nové objednávky dnes</h5>
-        <p class="card-text fs-4">{{ new_orders_today }}</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Celkový obrat</h5>
-        <p class="card-text fs-4">{{ total_revenue }} €</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Zákazníci</h5>
-        <p class="card-text fs-4">{{ total_customers }}</p>
-      </div>
-    </div>
-  </div>
-</div>
 
-            {% endblock %}
-        </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6>Dnes</h6>
+        <p class="fs-4">{{ new_orders_today }}</p>
+      </div>
     </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6>Obrat</h6>
+        <p class="fs-4">{{ total_revenue }} €</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6>Zákazníci</h6>
+        <p class="fs-4">{{ total_customers }}</p>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
