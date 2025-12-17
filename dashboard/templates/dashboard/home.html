@@ -1,18 +1,21 @@
-{% extends "dashboard/base_dashboard.html" %}
+{# dashboard/templates/dashboard/home.html #}
+{% extends "dashboard/dash_dashbord.html" %}
 
 {% block dashboard_content %}
 <h1>Prehľad</h1>
 
 <div class="row g-4 mt-3">
+  <!-- Celkový počet objednávok -->
   <div class="col-md-3">
     <div class="card text-center">
       <div class="card-body">
-        <h6>Objednávky</h6>
+        <h6>Objednávky celkovo</h6>
         <p class="fs-4">{{ total_orders }}</p>
       </div>
     </div>
   </div>
 
+  <!-- Počet nových objednávok dnes -->
   <div class="col-md-3">
     <div class="card text-center">
       <div class="card-body">
@@ -22,6 +25,7 @@
     </div>
   </div>
 
+  <!-- Celkový obrat -->
   <div class="col-md-3">
     <div class="card text-center">
       <div class="card-body">
@@ -31,6 +35,7 @@
     </div>
   </div>
 
+  <!-- Celkový počet zákazníkov -->
   <div class="col-md-3">
     <div class="card text-center">
       <div class="card-body">
@@ -40,4 +45,75 @@
     </div>
   </div>
 </div>
+
+<hr class="my-4">
+
+<!-- Grafy – objednávky za posledných 14 dní -->
+<div class="row">
+  <div class="col-md-6">
+    <h5>Objednávky za posledných 14 dní</h5>
+    <canvas id="ordersChart"></canvas>
+  </div>
+
+  <div class="col-md-6">
+    <h5>Obrat za posledných 14 dní</h5>
+    <canvas id="revenueChart"></canvas>
+  </div>
+</div>
+
+<!-- Tlačidlo pre stiahnutie PDF -->
+<div class="mt-4">
+  <a href="{% url 'dashboard:charts_pdf' %}" class="btn btn-primary">
+    📄 Stiahnuť report PDF
+  </a>
+</div>
+
+<!-- Skripty pre Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Objednávky
+  const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+  new Chart(ordersCtx, {
+    type: 'line',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Počet objednávok',
+        data: {{ orders_data|safe }},
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Obrat
+  const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+  new Chart(revenueCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Obrat (€)',
+        data: {{ revenue_data|safe }},
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+
 {% endblock %}

@@ -1,13 +1,17 @@
 # dashboard/urls.py
 from django.urls import path
-from . import views
+from .views import (
+    DashboardHomeView, ChartsView, ChartsPdfExportView,
+    OrdersView, ProductsView, CustomersView
+)
 
 app_name = "dashboard"
 
 urlpatterns = [
-    path("", views.DashboardHomeView.as_view(), name="home"),
-    path("orders/", views.OrdersView.as_view(), name="orders"),
-    path("products/", views.ProductsView.as_view(), name="products"),
-    path("customers/", views.CustomersView.as_view(), name="customers"),
-    path("charts/", views.ChartsView.as_view(), name="charts"),
+    path("", DashboardHomeView.as_view(), name="home"),
+    path("charts/", ChartsView.as_view(), name="charts"),
+    path("charts/export/pdf/", ChartsPdfExportView.as_view(), name="charts_pdf"),
+    path("orders/", OrdersView.as_view(), name="orders"),
+    path("products/", ProductsView.as_view(), name="products"),
+    path("customers/", CustomersView.as_view(), name="customers"),
 ]

@@ -1,18 +1,23 @@
-<!-- dashboard/templates/dashboard/charts.html -->
 {% extends "dashboard/base_dashboard.html" %}
 
 {% block dashboard_content %}
-<h2>Štatistiky objednávok</h2>
+<h2>📊 Štatistiky objednávok</h2>
+
+<div class="mb-4 d-flex gap-2">
+    <a href="{% url 'dashboard:charts_pdf' %}" class="btn btn-danger">
+        ⬇️ Stiahnuť PDF report
+    </a>
+</div>
 
 <hr>
 
 <h4>📦 Počet objednávok podľa dní</h4>
-<canvas id="ordersChart" height="100"></canvas>
+<canvas id="ordersChart" height="120"></canvas>
 
 <hr class="my-5">
 
 <h4>💰 Tržby podľa dní (€)</h4>
-<canvas id="revenueChart" height="100"></canvas>
+<canvas id="revenueChart" height="120"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -21,8 +26,7 @@
     const ordersData = {{ orders_data|safe }};
     const revenueData = {{ revenue_data|safe }};
 
-    // GRAF 1 – POČET OBJEDNÁVOK
-    new Chart(document.getElementById('ordersChart'), {
+    const ordersChart = new Chart(document.getElementById('ordersChart'), {
         type: 'line',
         data: {
             labels: labels,
@@ -33,35 +37,16 @@
                 fill: true
             }]
         },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                }
-            }
-        }
+        options: { responsive: true }
     });
 
-    // GRAF 2 – TRŽBY
-    new Chart(document.getElementById('revenueChart'), {
+    const revenueChart = new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Tržby (€)',
-                data: revenueData
-            }]
+            datasets: [{ label: 'Tržby (€)', data: revenueData }]
         },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
+        options: { responsive: true }
     });
 </script>
 {% endblock %}
