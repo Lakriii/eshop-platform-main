@@ -14,3 +14,7 @@ path('cart/', cart_views.CartView.as_view(), name='cart'),
 path('cart/items/', cart_views.CartItemAddView.as_view(), name='cart-add-item'),
 path('checkout/', cart_views.CheckoutView.as_view(), name='checkout'),
 ]"""
+import views
+from django.urls import path
+# Hľadaj tento riadok
+path('api/test-auth/', views.test_auth, name='test_auth'),

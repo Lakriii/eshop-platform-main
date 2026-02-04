@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 25mm 20mm;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #222;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #1976d2;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #1976d2;
+        }
+
+        .subtitle {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin: 25px 0 10px 0;
+            color: #333;
+            border-left: 5px solid #1976d2;
+            padding-left: 10px;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+
+        .chart-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .chart-container img {
+            width: 90%;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 6px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 5mm;
+            width: 100%;
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>{{ report_title }}</h1>
+    <div class="subtitle">
+        Generované: {{ report_date|date:"d.m.Y H:i" }}
+    </div>
+</div>
+
+<h2 class="section-title">📊 Prehľad výkonu e-shopu</h2>
+<div class="box">
+    Tento report zobrazuje vývoj objednávok a tržieb za posledné obdobie.
+    Slúži na manažérske rozhodovanie a hodnotenie výkonnosti internetového obchodu.
+</div>
+
+<h2 class="section-title">📈 Predajné dáta</h2>
+<div class="chart-container">
+    <img src="data:image/png;base64,{{ chart_base64 }}" alt="Sales Chart">
+</div>
+
+<h2 class="section-title">📝 Poznámky</h2>
+<div class="box">
+    - graf kombinuje počet objednávok aj obrat<br>
+    - PDF je v A4 formáte a pripravené na tlač<br>
+    - dá sa ďalej rozšíriť o tabuľky, KPI, porovnania, atď.
+</div>
+
+<div class="footer">
+    Fiktívny E-shop &copy; {{ report_date|date:"Y" }}
+</div>
+
+</body>
+</html>

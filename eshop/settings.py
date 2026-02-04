@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 SECRET_KEY = "django-insecure-your-secret-key"
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.1.171"]
 
 # DATABASE (SQLite)
 DATABASES = {
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "dashboard",
+    'rest_framework.authtoken', 
 ]
 
 # MIDDLEWARE
@@ -112,10 +113,14 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # REST FRAMEWORK
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-    )
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # Toto musí byť tu!
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
 }
 
 # CELERY
