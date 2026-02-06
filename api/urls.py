@@ -1,20 +1,24 @@
-"""from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from apps.catalog.views import ProductViewSet
-from apps.cart import views as cart_views
-
-
-router = DefaultRouter()
-router.register(r'products', ProductViewSet, basename='product')
-
+from django.contrib import admin
+from django.urls import path
+from api import views as api_views  # Dôležitý import s aliasom
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 urlpatterns = [
-path('', include(router.urls)),
-path('cart/', cart_views.CartView.as_view(), name='cart'),
-path('cart/items/', cart_views.CartItemAddView.as_view(), name='cart-add-item'),
-path('checkout/', cart_views.CheckoutView.as_view(), name='checkout'),
-]"""
-import views
-from django.urls import path
-# Hľadaj tento riadok
-path('api/test-auth/', views.test_auth, name='test_auth'),
+    path('admin/', admin.site.urls),
+
+    # JWT Login (Získanie tokenu)
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Registrácia
+    path('api/register/', api_views.register_user, name='register'),
+
+    # Profil
+    path('api/user-profile/', api_views.get_user_profile, name='user_profile'),
+
+    # Testovacia cesta
+    path('api/test-auth/', api_views.test_auth, name='test_auth'),
+]
