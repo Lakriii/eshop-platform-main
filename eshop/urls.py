@@ -23,6 +23,7 @@ urlpatterns = [
     path("orders/", include(("orders.urls", "orders"), namespace="orders")),
     path("payments/", include("payments.urls", namespace="payments")),
     path("accounts/", include("accounts.urls", namespace="accounts")),
+    path("api/", include("api.urls")),
 
     # --- API URL (PRE SWIFTUI APP) ---
     # Tvoje existujúce katalógové API

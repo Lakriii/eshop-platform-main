@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,7 +8,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 SECRET_KEY = "django-insecure-your-secret-key"
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.1.171"]
+ALLOWED_HOSTS = ["*"]
+#ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.1.169"]
 
 # DATABASE (SQLite)
 DATABASES = {
@@ -15,6 +17,14 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
+}
+
+SIMPLE_JWT = {
+    # Token bude platiť pol roka (ideálne pre vývoj a testovanie)
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=180),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=200),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 # REDIS (pre Celery)
@@ -54,13 +64,13 @@ INSTALLED_APPS = [
 
 # MIDDLEWARE
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",           # MUSÍ BYŤ PRVÉ
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    "django.middleware.common.CommonMiddleware",       # MUSÍ BYŤ POD CORS
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware", # Dôležité pre Usera
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
@@ -114,12 +124,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 # REST FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # Toto musí byť tu!
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated', # Zmeň z IsAuthenticatedOrReadOnly na toto
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',  # JSON je na prvom mieste
+        'rest_framework.renderers.BrowsableAPIRenderer', # Toto môžeš aj úplne vymazať, ak nechceš web rozhranie
     ),
 }
 
@@ -137,3 +150,15 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+CORS_ALLOW_ALL_ORIGINS = True  # Pre vývoj najjednoduchšie
+CORS_ALLOW_CREDENTIALS = True
+
+# Explicitne povolíme hlavičku Authorization
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
