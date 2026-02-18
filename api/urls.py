@@ -1,25 +1,20 @@
-from django.contrib import admin
-from django.urls import path
-from api import views  # Stačí jeden čistý import
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views
+
+# Router automaticky vytvorí cesty pre produkty (api/products/ a api/products/ID/)
+router = DefaultRouter()
+router.register(r'products', views.ProductViewSet)
 
 urlpatterns = [
-    # 1. Administrácia Django
-    path('admin/', admin.site.urls),
-
-    # 2. JWT Autentifikácia (Login a Refresh)
-    # Ak používaš vlastný View (napr. MyTokenObtainPairView), daj ho sem. 
-    # Ak nie, nechaj TokenObtainPairView.as_view()
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
-    # 3. Používateľské funkcie (Registrácia a Profil)
-    path('api/register/', views.register_user, name='register'),
-    path('user-profile/', views.get_user_profile, name='user_profile'),
-
-    # 4. Testovacia cesta pre Swift
+    # Produkty a kategórie
+    path('', include(router.urls)),
+    
+    # Používateľské funkcie
+    path('register/', views.register_user, name='register'),
+    path('profile/', views.UserProfileUpdateView.as_view(), name='profile_update'),
+    
+    # Objednávky a testy
+    path('checkout/simulate/', views.simulate_checkout, name='simulate_checkout'),
     path('test-auth/', views.test_auth, name='test_auth'),
 ]
