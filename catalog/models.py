@@ -8,11 +8,7 @@ class Category(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     parent = models.ForeignKey(
-        'self', 
-        null=True, 
-        blank=True, 
-        on_delete=models.SET_NULL,
-        related_name='subcategories'  # pridáme related_name
+        'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='subcategories'
     )
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -38,9 +34,11 @@ class Product(models.Model):
     currency = models.CharField(max_length=3, default='EUR')
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
     is_active = models.BooleanField(default=True)
+    in_stock = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
 
 # -------------------
 # Product Variant
@@ -64,6 +62,7 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.sku}"
 
+
 # -------------------
 # Product Image
 # -------------------
@@ -78,6 +77,7 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.product.name}"
+
 
 # -------------------
 # Stock
