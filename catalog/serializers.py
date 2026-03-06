@@ -1,47 +1,33 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductVariant
+from .models import Product, Category, ProductVariant, ProductImage
 
-# -------------------------
-# Product Variant Serializer
-# -------------------------
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'is_main', 'alt_text']
+
 class ProductVariantSerializer(serializers.ModelSerializer):
-    # Dynamicky získame názov hlavného produktu
+    stock_quantity = serializers.ReadOnlyField()
     name = serializers.ReadOnlyField(source='product.name')
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'name', 'price', 'stock_quantity']
+        fields = ['id', 'name', 'price', 'sku', 'stock_quantity', 'attributes']
 
-# -------------------------
-# Product Serializer
-# -------------------------
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug']
+
 class ProductSerializer(serializers.ModelSerializer):
-    # Jeden produkt môže mať viacero variantov
     variants = ProductVariantSerializer(many=True, read_only=True)
-    # Zobrazíme názov kategórie namiesto celého objektu
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    # Pre filter podľa kategórie bude užitočné mať ID aj nested objekt
-    category = serializers.SerializerMethodField()
+    images = ProductImageSerializer(many=True, read_only=True)
+    category_detail = CategorySerializer(source='category', read_only=True)
+    in_stock = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'slug', 'price', 'currency', 'is_active',
-            'in_stock', 'category_name', 'category', 'variants'
+            'in_stock', 'category_detail', 'variants', 'images'
         ]
-
-    def get_category(self, obj):
-        if obj.category:
-            return {
-                'id': obj.category.id,
-                'name': obj.category.name
-            }
-        return None
-
-# -------------------------
-# Category Serializer
-# -------------------------
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'slug']

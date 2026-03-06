@@ -3,27 +3,29 @@ from django.core.management.base import BaseCommand
 from catalog.models import Category, Product, ProductVariant, Stock, ProductImage
 
 class Command(BaseCommand):
-    help = 'Úplne vymaže databázu a spustí všetky seed skripty'
+    help = 'Úplne vymaže databázu a spustí všetky seed skripty v správnom poradí'
 
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.WARNING('⚠️ MAŽEM CELÚ DATABÁZU...'))
 
-        # 1. KROK: Vymazanie všetkého v správnom poradí (od potomkov k rodičom)
-        # Týmto sa vyhneš chybám s cudzími kľúčmi a unikátnymi slugmi
-        ProductImage.objects.all().delete()
+        # Mazanie od potomkov k rodičom (Foreign Key safe)
         Stock.objects.all().delete()
+        ProductImage.objects.all().delete()
         ProductVariant.objects.all().delete()
         Product.objects.all().delete()
         Category.objects.all().delete()
 
         self.stdout.write(self.style.SUCCESS('✅ Databáza je prázdna.'))
 
-        # 2. KROK: Spustenie tvojich seed skriptov
-        self.stdout.write('Spúšťam opätovné napĺňanie dát...')
-        
         try:
+            # 1. Najprv kategórie (inak produkty nebudú mať kam patriť)
+            self.stdout.write('Krok 1: Seedujem kategórie...')
             call_command('seed_categories')
-            call_command('seed_products')
-            self.stdout.write(self.style.SUCCESS('🎉 Všetko bolo úspešne naseedované od nuly!'))
+            
+            # 2. Potom produkty (ktoré vytvoria aj VARIANTY a OBRÁZKY)
+            self.stdout.write('Krok 2: Seedujem produkty s variantmi a obrázkami...')
+            call_command('seed_products') # Použi ten skript, ktorý má v sebe logiku pre obrázky
+            
+            self.stdout.write(self.style.SUCCESS('🎉 Všetko bolo úspešne naseedované!'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'❌ Chyba počas seedovania: {e}'))

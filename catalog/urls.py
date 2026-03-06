@@ -1,4 +1,7 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .api_views import ProductViewSet, CategoryViewSet # Uisti sa, že api_views existuje
+
 from .views import (
     ProductListView,
     ProductDetailView,
@@ -9,17 +12,19 @@ from .views import (
 
 app_name = "catalog"
 
-urlpatterns = [
-    # 1. Zoznam produktov
-    path('', ProductListView.as_view(), name='product_list'),
+# API Router - toto zabezpečí /api/products/
+router = DefaultRouter()
+router.register('products', ProductViewSet, basename='product')
+router.register('categories', CategoryViewSet, basename='category')
 
-    # 2. STAFF: Create a Edit – MUSIA BYŤ PRED detailom!
+urlpatterns = [
+    # 1. API endpointy
+    path('api/', include(router.urls)),
+
+    # 2. Klasické Webové zobrazenia (HTML)
+    path('', ProductListView.as_view(), name='product_list'),
     path('product/create/', ProductCreateView.as_view(), name='product_create'),
     path('product/<int:pk>/edit/', ProductUpdateView.as_view(), name='product_edit'),
-
-    # 3. Detail produktu – až teraz (lebo <slug:slug> je "greedy")
     path('product/<slug:slug>/', ProductDetailView.as_view(), name='product_detail'),
-
-    # 4. Kategórie
     path('category/<slug:slug>/', CategoryDetailView.as_view(), name='category_detail'),
 ]

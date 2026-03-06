@@ -1,43 +1,27 @@
-"""
-URL configuration for eshop project.
-"""
 from django.contrib import admin
 from django.urls import path, include
-from django.conf.urls.static import static
 from django.conf import settings
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-# IMPORTUJEME VIEWS Z TVOJEJ API ZLOŽKY
-from api import views as api_views
+from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # --- WEBOVÉ URL (KLASICKÉ DJANGO STRÁNKY) ---
-    path("dashboard/", include("dashboard.urls", namespace="dashboard")),
+    # Webové rozhranie (pôvodné)
     path('', include('core.urls')),
-    path('catalog/', include('catalog.urls')),  # web katalóg
-    path("cart/", include("cart.urls", namespace="cart")),
-    path("orders/", include(("orders.urls", "orders"), namespace="orders")),
-    path("payments/", include("payments.urls", namespace="payments")),
-    path("accounts/", include("accounts.urls", namespace="accounts")),
-    path("api/", include("api.urls")),
+    path('catalog/', include('catalog.urls')),
+    path('dashboard/', include('dashboard.urls', namespace='dashboard')),
+    path('cart/', include('cart.urls', namespace='cart')),
+    path('orders/', include('orders.urls', namespace='orders')),
+    path('payments/', include('payments.urls', namespace='payments')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
 
-    # --- API URL (PRE SWIFTUI APP) ---
-    # Tvoje existujúce katalógové API
-    path('api/catalog/', include('catalog.api_urls', namespace='catalog_api')),
-
-    # JWT TOKEN ENDPOINTY (Login a Refresh)
+    # API rozhranie pre SwiftUI
+    path('api/catalog/', include('catalog.api_urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
-    # TESTOVACÍ ENDPOINT (Pre overenie, či JWT v SwiftUI funguje)
-    # Tento riadok vyrieši chybu AttributeError v pytest
-    path('api/test-auth/', api_views.test_auth, name='test_auth'),
 ]
 
-# Obsluha statických súborov a obrázkov (Media)
+# Servovanie obrázkov (nutné pre Mac/DEBUG)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
