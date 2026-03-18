@@ -10,7 +10,7 @@ SECRET_KEY = "django-insecure-your-secret-key"
 DEBUG = True
 
 # POVOLENÉ ADRESY - Pridal som tvoju IP, localhost aj hviezdicku pre istotu
-ALLOWED_HOSTS = ["192.168.100.121", "127.0.0.1", "localhost", "*"]
+ALLOWED_HOSTS = ["'10.0.1.253', 192.168.100.121", "127.0.0.1", "localhost", "*"]
 
 # APPS
 INSTALLED_APPS = [

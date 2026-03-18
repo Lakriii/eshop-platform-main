@@ -8,3 +8,6 @@ class CartDetailView(View):
         cart = get_or_create_cart(request)
         total = sum(item.line_total() for item in cart.items.all())
         return render(request, "cart/cart_detail.html", {"cart": cart, "total": total})
+class CartDetailView(View):
+    def get(self, request):
+        cart = get_or_create_cart(request)

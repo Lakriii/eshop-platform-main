@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # Webové rozhranie (pôvodné)
+    # 1. Klasické webové rozhranie (HTML šablóny)
     path('', include('core.urls')),
     path('catalog/', include('catalog.urls')),
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
@@ -16,12 +16,16 @@ urlpatterns = [
     path('payments/', include('payments.urls', namespace='payments')),
     path('accounts/', include('accounts.urls', namespace='accounts')),
 
-    # API rozhranie pre SwiftUI
-    path('api/catalog/', include('catalog.api_urls')),
+    # 2. API rozhranie pre SwiftUI
+    # DÔLEŽITÉ: Ak Xcode volá "catalog/api/products", prefix musí byť "catalog/"
+    path('catalog/api/', include('catalog.urls')), # Tento riadok prepojí router z catalog/urls.py
+    
+    # Auth API
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
-# Servovanie obrázkov (nutné pre Mac/DEBUG)
+# Servovanie obrázkov (nutné pre vývoj)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
