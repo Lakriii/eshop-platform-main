@@ -7,6 +7,12 @@ from .models import Product, Category
 from .forms import ProductForm, ProductImageFormSet
 from .filters import ProductFilter
 
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
+from .serializers import RegisterSerializer
+
+User = get_user_model()  # Toto nájde tvoj správny model (accounts.User)
 
 class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -105,3 +111,8 @@ class ProductUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
             images.instance = self.object
             images.save()
         return super().form_valid(form)
+    
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = RegisterSerializer
