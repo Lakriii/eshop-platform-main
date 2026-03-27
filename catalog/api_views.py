@@ -1,35 +1,24 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.shortcuts import get_object_or_404
-
-from catalog.models import Product, Category, ProductVariant
-from cart.models import Cart, CartItem
+from rest_framework import viewsets, permissions
+from .models import Product, Category
+# Importujeme modely a serializers z aplikácie orders
 from orders.models import Order
-
-from .serializers import ProductSerializer, CategorySerializer
-from cart.serializers import CartSerializer
 from orders.serializers import OrderSerializer
+from .serializers import ProductSerializer, CategorySerializer
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    """API pre produkty"""
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
     lookup_field = 'slug'
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Category.objects.all()
+    """API pre kategórie"""
+    queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
     lookup_field = 'slug'
 
-class CartViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def list(self, request):
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
-
 class OrderViewSet(viewsets.ModelViewSet):
+    """API pre objednávky (iba pre prihlásených)"""
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 

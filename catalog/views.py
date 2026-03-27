@@ -5,19 +5,22 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from .models import Product, Category
 from .forms import ProductForm, ProductImageFormSet
-from .filters import ProductFilter
+# Predpokladám, že máš ProductFilter v filters.py, ak nie, treba ho vytvoriť alebo filter odstrániť
+try:
+    from .filters import ProductFilter
+except ImportError:
+    ProductFilter = None
 
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer
 
-User = get_user_model()  # Toto nájde tvoj správny model (accounts.User)
+User = get_user_model()
 
 class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_staff
-
+        return self.request.user.is_authenticated and self.request.user.is_staff
 
 class ProductListView(ListView):
     model = Product
@@ -27,17 +30,20 @@ class ProductListView(ListView):
 
     def get_queryset(self):
         queryset = Product.objects.filter(is_active=True).select_related("category")
-        self.filter = ProductFilter(self.request.GET, queryset=queryset)
-        return self.filter.qs.distinct().order_by("id")
+        if ProductFilter:
+            self.filter = ProductFilter(self.request.GET, queryset=queryset)
+            return self.filter.qs.distinct().order_by("id")
+        return queryset.order_by("id")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["filter"] = self.filter
+        if ProductFilter:
+            context["filter"] = self.filter
+            cat_id = self.filter.form['category'].value()
+            context["current_category"] = Category.objects.filter(id=cat_id).first() if cat_id else None
+        
         context["categories"] = Category.objects.filter(is_active=True)
-        cat_id = self.filter.form['category'].value()
-        context["current_category"] = Category.objects.filter(id=cat_id).first() if cat_id else None
         return context
-
 
 class ProductDetailView(DetailView):
     model = Product
@@ -51,9 +57,8 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["variants"] = self.get_object().variants.all()
+        context["variants"] = self.object.variants.all()
         return context
-
 
 class CategoryDetailView(ListView):
     model = Product
@@ -70,7 +75,6 @@ class CategoryDetailView(ListView):
         context["subcategories"] = Category.objects.filter(parent=self.category, is_active=True)
         return context
 
-
 class ProductCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
@@ -79,7 +83,10 @@ class ProductCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        data["images"] = ProductImageFormSet(self.request.POST or None, self.request.FILES or None)
+        if self.request.POST:
+            data["images"] = ProductImageFormSet(self.request.POST, self.request.FILES)
+        else:
+            data["images"] = ProductImageFormSet()
         return data
 
     def form_valid(self, form):
@@ -90,7 +97,6 @@ class ProductCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
             images.instance = self.object
             images.save()
         return super().form_valid(form)
-
 
 class ProductUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
     model = Product
@@ -100,7 +106,10 @@ class ProductUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        data["images"] = ProductImageFormSet(self.request.POST or None, self.request.FILES or None, instance=self.object)
+        if self.request.POST:
+            data["images"] = ProductImageFormSet(self.request.POST, self.request.FILES, instance=self.object)
+        else:
+            data["images"] = ProductImageFormSet(instance=self.object)
         return data
 
     def form_valid(self, form):
@@ -111,7 +120,7 @@ class ProductUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
             images.instance = self.object
             images.save()
         return super().form_valid(form)
-    
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)

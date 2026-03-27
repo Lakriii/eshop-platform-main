@@ -1,28 +1,29 @@
-# apps/orders/models.py
 from decimal import Decimal
 from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from catalog.models import Product
-
-
+from catalog.models import Product, ProductVariant
 
 User = get_user_model()
 
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # percent
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     active = models.BooleanField(default=True)
     valid_from = models.DateTimeField(null=True, blank=True)
     valid_to = models.DateTimeField(null=True, blank=True)
-    max_uses_total = models.PositiveIntegerField(default=0)   # 0 = unlimited
-    max_uses_per_user = models.PositiveIntegerField(default=1)  # how many times one user can use this coupon
-    allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True,
-                                           help_text="Ak je nastavené, len tieto účty môžu použiť kupón.")
-    min_order_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"),
-                                          help_text="Minimálna hodnota objednávky pre použitie kupónu.")
+    max_uses_total = models.PositiveIntegerField(default=0)
+    max_uses_per_user = models.PositiveIntegerField(default=1)
+    allowed_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, 
+        blank=True,
+        help_text="Ak je nastavené, len tieto účty môžu použiť kupón."
+    )
+    min_order_total = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Minimálna hodnota objednávky pre použitie kupónu."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -56,7 +57,6 @@ class Coupon(models.Model):
         return True
 
     def is_valid_for_user(self, user, order_total=Decimal("0.00")):
-        """Komplexné overenie: aktivita, dátumy, min order, total limit, per-user limit, allow list."""
         if not self.active:
             return False, "Kupón nie je aktívny."
         if not self.is_within_dates():
@@ -74,23 +74,14 @@ class Coupon(models.Model):
 
     @transaction.atomic
     def use_by(self, user):
-        """
-        Attempt to mark coupon used by `user`.
-        Returns (True, usage_instance) on success, (False, reason_string) on failure.
-        Atomic to avoid race conditions.
-        """
         valid, reason = self.is_valid_for_user(user)
         if not valid:
             return False, reason
-
-        # create usage
         usage = CouponUsage.objects.create(coupon=self, user=user)
-        # If total limit reached, optionally deactivate
         if self.max_uses_total > 0 and self.total_uses() >= self.max_uses_total:
             self.active = False
             self.save(update_fields=["active"])
         return True, usage
-
 
 class CouponUsage(models.Model):
     coupon = models.ForeignKey(Coupon, related_name="usages", on_delete=models.CASCADE)
@@ -98,23 +89,21 @@ class CouponUsage(models.Model):
     used_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("coupon", "user", "used_at")  # allows multiple rows but ensures meaningful uniqueness
+        unique_together = ("coupon", "user", "used_at")
 
     def __str__(self):
-        return f"{self.user} used {self.coupon.code} on {self.used_at}"
+        return f"{self.user} použil {self.coupon.code} dňa {self.used_at}"
 
-
-# Order + OrderItem (ak ich ešte nemáš alebo ak chceš upraviť)
 class Order(models.Model):
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('pending_payment', 'Pending Payment'),
-        ('paid', 'Paid'),
-        ('fulfilled', 'Fulfilled'),
-        ('cancelled', 'Cancelled'),
+        ('draft', 'Koncept'),
+        ('pending_payment', 'Čaká na platbu'),
+        ('paid', 'Zaplatené'),
+        ('fulfilled', 'Vybavené'),
+        ('cancelled', 'Zrušené'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='order_history')
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='draft')
     total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -129,7 +118,7 @@ class Order(models.Model):
     used_loyalty_points = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"Order {self.pk} - {self.status}"
+        return f"Objednávka {self.pk} - {self.get_status_display()}"
 
     def calculate_coupon_discount_amount(self):
         if self.coupon:
@@ -137,38 +126,25 @@ class Order(models.Model):
             return (self.total * pct).quantize(Decimal("0.01"))
         return Decimal("0.00")
 
-    def calculate_loyalty_discount_amount(self):
-        # Example: 100 points = 10%, max 20%
-        if not hasattr(self.user, "profile"):
-            return Decimal("0.00")
-        points = Decimal(self.used_loyalty_points or 0)
-        pct = min((points / Decimal("100")) * Decimal("10"), Decimal("20"))
-        return (self.total * pct / Decimal("100")).quantize(Decimal("0.01"))
-
     def calculate_total_after_discounts(self):
         coupon_amount = self.calculate_coupon_discount_amount()
-        loyalty_amount = self.calculate_loyalty_discount_amount()
-        total = self.total - coupon_amount - loyalty_amount
+        total = self.total - coupon_amount
         return max(total, Decimal("0.00"))
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, default=1)
-    quantity = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name='order_items')
+    quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
-    def product_name(sf2elf):
-        return self.product.name
-
-    def sku(self):
-        return self.product.sku
-
-
+    def __str__(self):
+        return f"{self.quantity}x {self.product.name if self.product else 'Neznámy produkt'}"
 
 class PaymentRecord(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def amount(self):
-        return self.total_amount
+    def __str__(self):
+        return f"Platba k objednávke {self.order.id} - {self.status}"
